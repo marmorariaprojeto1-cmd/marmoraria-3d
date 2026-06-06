@@ -48,6 +48,9 @@ Ainda nao devem ser desenvolvidos:
 - [UX_FLOW.md](UX_FLOW.md): fluxo da experiência do cliente e da marmoraria
 - [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md): esquema conceitual do banco de dados SaaS
 - [WIREFRAMES.md](WIREFRAMES.md): wireframes conceituais das telas da plataforma
+- [ADMIN_PANEL_SPEC.md](ADMIN_PANEL_SPEC.md): especificação do painel administrativo
+- [3D_ENGINE_SPEC.md](3D_ENGINE_SPEC.md): especificação do motor visual 2D/3D
+- [LEAD_DISTRIBUTION_SYSTEM.md](LEAD_DISTRIBUTION_SYSTEM.md): sistema futuro de distribuição de leads
 - [ROADMAP.md](ROADMAP.md): fases planejadas de evolucao
 
 ## Visao de SaaS Multiempresa
