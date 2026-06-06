@@ -51,6 +51,7 @@ Ainda nao devem ser desenvolvidos:
 - [ADMIN_PANEL_SPEC.md](ADMIN_PANEL_SPEC.md): especificação do painel administrativo
 - [3D_ENGINE_SPEC.md](3D_ENGINE_SPEC.md): especificação do motor visual 2D/3D
 - [LEAD_DISTRIBUTION_SYSTEM.md](LEAD_DISTRIBUTION_SYSTEM.md): sistema futuro de distribuição de leads
+- [MVP_IMPLEMENTATION_PLAN.md](MVP_IMPLEMENTATION_PLAN.md): plano oficial de implementação do MVP
 - [ROADMAP.md](ROADMAP.md): fases planejadas de evolucao
 
 ## Visao de SaaS Multiempresa
