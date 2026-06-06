@@ -43,6 +43,7 @@ Ainda nao devem ser desenvolvidos:
 - [PROJECT_VISION.md](PROJECT_VISION.md): visão oficial do produto
 - [PROJECT_RULES.md](PROJECT_RULES.md): regras de trabalho e limites do projeto
 - [PRODUCT_SCOPE.md](PRODUCT_SCOPE.md): escopo funcional do produto
+- [MASTER_PRODUCT_CATALOG.md](MASTER_PRODUCT_CATALOG.md): catálogo mestre de produtos e opções
 - [ROADMAP.md](ROADMAP.md): fases planejadas de evolucao
 
 ## Visao de SaaS Multiempresa
