@@ -3,6 +3,7 @@ import { Layout } from './components/Layout';
 import { ProtectedAdminPage } from './pages/AdminPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminPlaceholderPage } from './pages/admin/AdminPlaceholderPage';
+import { SinksPage } from './pages/admin/SinksPage';
 import { StonesPage } from './pages/admin/StonesPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
@@ -49,13 +50,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'cubas',
-            element: (
-              <AdminPlaceholderPage
-                eyebrow="Catálogo"
-                title="Cubas"
-                description="Gestão futura das cubas disponíveis para cozinhas e banheiros."
-              />
-            ),
+            element: <SinksPage />,
           },
           {
             path: 'acabamentos',
