@@ -47,6 +47,7 @@ Ainda nao devem ser desenvolvidos:
 - [CATALOGO_DE_REGRAS_DE_ORCAMENTO.md](CATALOGO_DE_REGRAS_DE_ORCAMENTO.md): regras oficiais de orçamento
 - [UX_FLOW.md](UX_FLOW.md): fluxo da experiência do cliente e da marmoraria
 - [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md): esquema conceitual do banco de dados SaaS
+- [WIREFRAMES.md](WIREFRAMES.md): wireframes conceituais das telas da plataforma
 - [ROADMAP.md](ROADMAP.md): fases planejadas de evolucao
 
 ## Visao de SaaS Multiempresa
