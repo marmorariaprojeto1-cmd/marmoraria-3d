@@ -40,6 +40,7 @@ Ainda nao devem ser desenvolvidos:
 
 ## Documentos Principais
 
+- [PROJECT_VISION.md](PROJECT_VISION.md): visão oficial do produto
 - [PROJECT_RULES.md](PROJECT_RULES.md): regras de trabalho e limites do projeto
 - [PRODUCT_SCOPE.md](PRODUCT_SCOPE.md): escopo funcional do produto
 - [ROADMAP.md](ROADMAP.md): fases planejadas de evolucao
