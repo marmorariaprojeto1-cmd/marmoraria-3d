@@ -45,6 +45,7 @@ Ainda nao devem ser desenvolvidos:
 - [PRODUCT_SCOPE.md](PRODUCT_SCOPE.md): escopo funcional do produto
 - [MASTER_PRODUCT_CATALOG.md](MASTER_PRODUCT_CATALOG.md): catálogo mestre de produtos e opções
 - [CATALOGO_DE_REGRAS_DE_ORCAMENTO.md](CATALOGO_DE_REGRAS_DE_ORCAMENTO.md): regras oficiais de orçamento
+- [UX_FLOW.md](UX_FLOW.md): fluxo da experiência do cliente e da marmoraria
 - [ROADMAP.md](ROADMAP.md): fases planejadas de evolucao
 
 ## Visao de SaaS Multiempresa
