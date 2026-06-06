@@ -3,6 +3,7 @@ import { Layout } from './components/Layout';
 import { ProtectedAdminPage } from './pages/AdminPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminPlaceholderPage } from './pages/admin/AdminPlaceholderPage';
+import { StonesPage } from './pages/admin/StonesPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { SimulatorPage } from './pages/SimulatorPage';
@@ -44,13 +45,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'pedras',
-            element: (
-              <AdminPlaceholderPage
-                eyebrow="Catálogo"
-                title="Pedras"
-                description="Gestão futura das pedras disponíveis no catálogo da marmoraria."
-              />
-            ),
+            element: <StonesPage />,
           },
           {
             path: 'cubas',
