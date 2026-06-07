@@ -10,6 +10,7 @@ import { SinksPage } from './pages/admin/SinksPage';
 import { StonesPage } from './pages/admin/StonesPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
+import { Preview3DPage } from './pages/Preview3DPage';
 import { SimulatorPage } from './pages/SimulatorPage';
 
 export const router = createBrowserRouter([
@@ -24,6 +25,10 @@ export const router = createBrowserRouter([
       {
         path: 'simulador',
         element: <SimulatorPage />,
+      },
+      {
+        path: 'preview-3d',
+        element: <Preview3DPage />,
       },
       {
         path: 'login',
