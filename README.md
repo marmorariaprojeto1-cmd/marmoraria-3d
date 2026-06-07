@@ -44,6 +44,8 @@ Ainda nao devem ser desenvolvidos:
 - [PROJECT_RULES.md](PROJECT_RULES.md): regras de trabalho e limites do projeto
 - [PRODUCT_SCOPE.md](PRODUCT_SCOPE.md): escopo funcional do produto
 - [MASTER_PRODUCT_CATALOG.md](MASTER_PRODUCT_CATALOG.md): catálogo mestre de produtos e opções
+- [DEFAULT_CATALOG_SEED.md](DEFAULT_CATALOG_SEED.md): catálogo padrão oficial do MVP
+- [DEFAULT_CATALOG_IMPORT_STRATEGY.md](DEFAULT_CATALOG_IMPORT_STRATEGY.md): estratégia de importação do catálogo padrão
 - [CATALOGO_DE_REGRAS_DE_ORCAMENTO.md](CATALOGO_DE_REGRAS_DE_ORCAMENTO.md): regras oficiais de orçamento
 - [UX_FLOW.md](UX_FLOW.md): fluxo da experiência do cliente e da marmoraria
 - [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md): esquema conceitual do banco de dados SaaS
