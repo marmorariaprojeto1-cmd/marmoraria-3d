@@ -1,8 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#d8d2c5"/>
-  <path d="M-40 128 C120 92 240 160 552 72" fill="none" stroke="#948d82" stroke-width="10" opacity=".28"/>
-  <path d="M-20 340 C130 300 260 365 540 260" fill="none" stroke="#f2eee5" stroke-width="22" opacity=".34"/>
-  <path d="M28 470 C175 370 300 430 520 330" fill="none" stroke="#81796d" stroke-width="5" opacity=".22"/>
-  <circle cx="110" cy="210" r="5" fill="#b4ab9c" opacity=".35"/>
-  <circle cx="370" cy="150" r="7" fill="#f5f1e8" opacity=".4"/>
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d9d2c3"/>
+      <stop offset=".45" stop-color="#c8c0af"/>
+      <stop offset="1" stop-color="#eee7d8"/>
+    </linearGradient>
+    <radialGradient id="cloud" cx=".28" cy=".3" r=".8">
+      <stop offset="0" stop-color="#f7f2e8" stop-opacity=".45"/>
+      <stop offset=".55" stop-color="#d4cabb" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#b9af9e" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#base)"/>
+  <rect width="512" height="512" fill="url(#cloud)"/>
+  <path d="M-50 118 C76 72 184 142 282 98 S420 42 560 76" fill="none" stroke="#837a6f" stroke-width="8" opacity=".25"/>
+  <path d="M-24 258 C106 206 238 294 356 230 S466 184 552 220" fill="none" stroke="#f9f3e8" stroke-width="28" opacity=".3"/>
+  <path d="M-42 388 C96 332 220 416 334 360 S462 318 552 392" fill="none" stroke="#91887c" stroke-width="5" opacity=".18"/>
+  <path d="M66 512 C166 414 278 470 382 410 S482 358 560 370" fill="none" stroke="#b5aa9a" stroke-width="14" opacity=".22"/>
+  <g fill="#7f766b" opacity=".2">
+    <circle cx="102" cy="208" r="2.4"/>
+    <circle cx="226" cy="330" r="3.2"/>
+    <circle cx="368" cy="132" r="2.8"/>
+    <circle cx="450" cy="278" r="2"/>
+  </g>
 </svg>

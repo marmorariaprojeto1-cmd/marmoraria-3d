@@ -1,8 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#c6a869"/>
-  <path d="M-40 96 C120 160 260 90 552 188" fill="none" stroke="#7f6740" stroke-width="13" opacity=".3"/>
-  <path d="M-20 270 C110 240 260 320 540 250" fill="none" stroke="#eed99a" stroke-width="24" opacity=".32"/>
-  <path d="M10 455 C170 340 300 430 560 330" fill="none" stroke="#6b5634" stroke-width="6" opacity=".28"/>
-  <circle cx="105" cy="215" r="7" fill="#6d5838" opacity=".28"/>
-  <circle cx="345" cy="115" r="8" fill="#ead28a" opacity=".36"/>
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b89554"/>
+      <stop offset=".45" stop-color="#d2b877"/>
+      <stop offset="1" stop-color="#9b7b43"/>
+    </linearGradient>
+    <radialGradient id="gold" cx=".35" cy=".22" r=".78">
+      <stop offset="0" stop-color="#f1d894" stop-opacity=".42"/>
+      <stop offset=".55" stop-color="#c5a765" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#735c37" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#base)"/>
+  <rect width="512" height="512" fill="url(#gold)"/>
+  <path d="M-44 96 C80 142 182 86 292 136 S426 212 558 164" fill="none" stroke="#6f5631" stroke-width="9" opacity=".26"/>
+  <path d="M-36 232 C102 198 218 278 336 232 S462 206 552 256" fill="none" stroke="#ead390" stroke-width="24" opacity=".32"/>
+  <path d="M-24 390 C116 302 234 410 348 342 S468 302 558 330" fill="none" stroke="#735633" stroke-width="6" opacity=".24"/>
+  <path d="M38 506 C176 424 266 462 374 408 S474 374 548 396" fill="none" stroke="#f5dfa0" stroke-width="11" opacity=".22"/>
+  <g fill="#664d2f" opacity=".23">
+    <circle cx="104" cy="216" r="3.4"/>
+    <circle cx="208" cy="336" r="2.3"/>
+    <circle cx="320" cy="118" r="3.1"/>
+    <circle cx="438" cy="288" r="2.6"/>
+  </g>
 </svg>

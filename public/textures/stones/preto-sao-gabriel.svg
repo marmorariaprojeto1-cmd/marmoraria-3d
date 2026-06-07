@@ -1,8 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#1e2021"/>
-  <path d="M-30 110 C110 70 220 150 550 90" fill="none" stroke="#5d6266" stroke-width="6" opacity=".32"/>
-  <path d="M-20 290 C130 250 260 330 540 260" fill="none" stroke="#34383b" stroke-width="20" opacity=".6"/>
-  <path d="M20 450 C150 360 315 420 560 310" fill="none" stroke="#777d80" stroke-width="3" opacity=".3"/>
-  <circle cx="90" cy="190" r="4" fill="#74797b" opacity=".38"/>
-  <circle cx="360" cy="335" r="3" fill="#8b9092" opacity=".28"/>
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17191a"/>
+      <stop offset=".52" stop-color="#252829"/>
+      <stop offset="1" stop-color="#111314"/>
+    </linearGradient>
+    <radialGradient id="speck" cx=".34" cy=".28" r=".75">
+      <stop offset="0" stop-color="#484c4e" stop-opacity=".34"/>
+      <stop offset=".55" stop-color="#2f3335" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#111314" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#base)"/>
+  <rect width="512" height="512" fill="url(#speck)"/>
+  <path d="M-48 86 C70 60 156 104 256 82 S438 72 560 38" fill="none" stroke="#666d70" stroke-width="4" opacity=".25"/>
+  <path d="M-42 236 C88 184 178 250 300 206 S444 182 560 138" fill="none" stroke="#3d4244" stroke-width="18" opacity=".42"/>
+  <path d="M-36 404 C112 318 224 420 340 352 S460 312 558 276" fill="none" stroke="#747a7c" stroke-width="3" opacity=".22"/>
+  <path d="M32 500 C152 430 248 470 354 418 S458 372 548 360" fill="none" stroke="#2d3132" stroke-width="22" opacity=".45"/>
+  <g fill="#8d9294" opacity=".28">
+    <circle cx="72" cy="168" r="2.4"/>
+    <circle cx="118" cy="384" r="1.8"/>
+    <circle cx="214" cy="138" r="2.1"/>
+    <circle cx="306" cy="290" r="1.6"/>
+    <circle cx="418" cy="96" r="2.2"/>
+    <circle cx="452" cy="420" r="1.7"/>
+  </g>
 </svg>
