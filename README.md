@@ -52,6 +52,7 @@ Ainda nao devem ser desenvolvidos:
 - [3D_ENGINE_SPEC.md](3D_ENGINE_SPEC.md): especificação do motor visual 2D/3D
 - [LEAD_DISTRIBUTION_SYSTEM.md](LEAD_DISTRIBUTION_SYSTEM.md): sistema futuro de distribuição de leads
 - [MVP_IMPLEMENTATION_PLAN.md](MVP_IMPLEMENTATION_PLAN.md): plano oficial de implementação do MVP
+- [MVP_TEST_CHECKLIST.md](MVP_TEST_CHECKLIST.md): checklist técnico de validação manual do MVP
 - [ROADMAP.md](ROADMAP.md): fases planejadas de evolucao
 
 ## Visao de SaaS Multiempresa
