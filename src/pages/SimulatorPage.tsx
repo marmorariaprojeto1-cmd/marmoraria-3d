@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { hasSupabaseConfig, supabase } from '../lib/supabase';
-import { calculateQuoteTotal } from '../services/quoteCalculator';
+import { calculateQuoteTotal, roundMoney } from '../services/quoteCalculator';
 import type { FinishPricingType } from '../types/quote';
 
 type ProductCatalogItem = {
@@ -65,6 +65,12 @@ type SaveQuoteInput = {
     quantity: number;
     unitPrice: number;
     totalPrice: number;
+    calculatedArea: number;
+    stonePriceSnapshot: number;
+    sinkPriceSnapshot: number;
+    finishPriceSnapshot: number;
+    thicknessMultiplier: number;
+    subtotalSnapshot: number;
   };
 };
 
@@ -181,44 +187,36 @@ async function fetchSimulatorCatalog(companyId: string): Promise<SimulatorCatalo
 }
 
 async function saveCompletedQuote(input: SaveQuoteInput) {
-  const { data: quote, error: quoteError } = await supabase
-    .from('quotes')
-    .insert({
-      company_id: input.companyId,
-      customer_name: input.customer.name,
-      customer_phone: input.customer.phone,
-      customer_email: input.customer.email || null,
-      city: input.customer.city || null,
-      status: 'submitted',
-      total_price: input.item.totalPrice,
-    })
-    .select('id')
-    .single();
-
-  if (quoteError) {
-    throw quoteError;
-  }
-
-  const { error: itemError } = await supabase.from('quote_items').insert({
-    company_id: input.companyId,
-    quote_id: quote.id,
-    product_id: input.item.productId,
-    stone_id: input.item.stoneId,
-    sink_id: input.item.sinkId,
-    finish_id: input.item.finishId,
-    width: input.item.width,
-    depth: input.item.depth,
-    thickness: input.item.thickness,
-    quantity: input.item.quantity,
-    unit_price: input.item.unitPrice,
-    total_price: input.item.totalPrice,
+  const { data: quoteId, error } = await supabase.rpc('create_quote_with_item', {
+    p_company_id: input.companyId,
+    p_customer_name: input.customer.name,
+    p_customer_phone: input.customer.phone,
+    p_customer_email: input.customer.email || null,
+    p_city: input.customer.city || null,
+    p_status: 'submitted',
+    p_product_id: input.item.productId,
+    p_stone_id: input.item.stoneId,
+    p_sink_id: input.item.sinkId,
+    p_finish_id: input.item.finishId,
+    p_width: input.item.width,
+    p_depth: input.item.depth,
+    p_thickness: input.item.thickness,
+    p_quantity: input.item.quantity,
+    p_unit_price: input.item.unitPrice,
+    p_total_price: input.item.totalPrice,
+    p_calculated_area: input.item.calculatedArea,
+    p_stone_price_snapshot: input.item.stonePriceSnapshot,
+    p_sink_price_snapshot: input.item.sinkPriceSnapshot,
+    p_finish_price_snapshot: input.item.finishPriceSnapshot,
+    p_thickness_multiplier: input.item.thicknessMultiplier,
+    p_subtotal_snapshot: input.item.subtotalSnapshot,
   });
 
-  if (itemError) {
-    throw itemError;
+  if (error) {
+    throw error;
   }
 
-  return quote.id as string;
+  return quoteId as string;
 }
 
 async function fetchSimulatorCompany(companyId: string): Promise<SimulatorCompany> {
@@ -358,6 +356,7 @@ export function SimulatorPage() {
             stone: {
               dimensions,
               pricePerM2: selectedStone.price_per_m2,
+              thickness: resolvedThickness,
               quantity: resolvedQuantity,
             },
             sink: selectedSink
@@ -379,11 +378,14 @@ export function SimulatorPage() {
             stonePrice: 0,
             sinkPrice: 0,
             finishPrice: 0,
+            thicknessMultiplier: 1,
+            subtotal: 0,
             total: 0,
           },
     [
       dimensions,
       resolvedQuantity,
+      resolvedThickness,
       selectedFinish,
       selectedSink,
       selectedStone,
@@ -393,7 +395,7 @@ export function SimulatorPage() {
   const previewWidth = Math.min(100, Math.max(45, dimensions.width * 35));
   const previewHeight = Math.min(70, Math.max(22, dimensions.depth * 70));
   const isLastStep = currentStep === simulatorSteps.length - 1;
-  const unitPrice = quote.total / resolvedQuantity;
+  const unitPrice = roundMoney(quote.total / resolvedQuantity);
   const companyWhatsAppNumber = normalizeWhatsAppNumber(company?.whatsapp);
   const canSaveQuote = Boolean(
     canFetchCatalog &&
@@ -443,6 +445,12 @@ export function SimulatorPage() {
           quantity: resolvedQuantity,
           unitPrice,
           totalPrice: quote.total,
+          calculatedArea: quote.area,
+          stonePriceSnapshot: quote.stonePrice,
+          sinkPriceSnapshot: quote.sinkPrice,
+          finishPriceSnapshot: quote.finishPrice,
+          thicknessMultiplier: quote.thicknessMultiplier,
+          subtotalSnapshot: quote.subtotal,
         },
       });
     },

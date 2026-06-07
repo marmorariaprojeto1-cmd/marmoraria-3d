@@ -13,6 +13,14 @@ function ensureNonNegativeNumber(value: number, fieldName: string) {
   }
 }
 
+export function roundMoney(value: number) {
+  if (!Number.isFinite(value)) {
+    throw new Error('value deve ser um número finito.');
+  }
+
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
 function resolveQuantity(quantity?: number) {
   const resolvedQuantity = quantity ?? 1;
 
@@ -21,6 +29,26 @@ function resolveQuantity(quantity?: number) {
   }
 
   return resolvedQuantity;
+}
+
+export function resolveThicknessMultiplier(thickness?: number) {
+  if (thickness === undefined) {
+    return 1;
+  }
+
+  ensureNonNegativeNumber(thickness, 'thickness');
+
+  const normalizedThickness = Math.round(thickness * 100) / 100;
+
+  if (normalizedThickness === 3) {
+    return 1.15;
+  }
+
+  if (normalizedThickness === 4) {
+    return 1.3;
+  }
+
+  return 1;
 }
 
 export function calculateArea({ width, depth }: QuoteDimensions) {
@@ -33,14 +61,16 @@ export function calculateArea({ width, depth }: QuoteDimensions) {
 export function calculateStonePrice({
   dimensions,
   pricePerM2,
+  thickness,
   quantity,
 }: StoneQuoteInput) {
   ensureNonNegativeNumber(pricePerM2, 'pricePerM2');
 
   const area = calculateArea(dimensions);
   const resolvedQuantity = resolveQuantity(quantity);
+  const thicknessMultiplier = resolveThicknessMultiplier(thickness);
 
-  return area * pricePerM2 * resolvedQuantity;
+  return roundMoney(area * pricePerM2 * thicknessMultiplier * resolvedQuantity);
 }
 
 export function calculateSinkPrice(input?: SinkQuoteInput | null) {
@@ -51,7 +81,7 @@ export function calculateSinkPrice(input?: SinkQuoteInput | null) {
   const price = input.price ?? 0;
   ensureNonNegativeNumber(price, 'sink.price');
 
-  return price * resolveQuantity(input.quantity);
+  return roundMoney(price * resolveQuantity(input.quantity));
 }
 
 export function calculateFinishPrice(input?: FinishQuoteInput | null) {
@@ -65,7 +95,7 @@ export function calculateFinishPrice(input?: FinishQuoteInput | null) {
   const quantity = resolveQuantity(input.quantity);
 
   if (input.pricingType === 'fixed') {
-    return price * quantity;
+    return roundMoney(price * quantity);
   }
 
   if (input.pricingType === 'linear_meter') {
@@ -76,19 +106,20 @@ export function calculateFinishPrice(input?: FinishQuoteInput | null) {
     const perimeter = (input.dimensions.width + input.dimensions.depth) * 2;
     ensureNonNegativeNumber(perimeter, 'finish.perimeter');
 
-    return perimeter * price * quantity;
+    return roundMoney(perimeter * price * quantity);
   }
 
   const basePrice = input.basePrice ?? 0;
   ensureNonNegativeNumber(basePrice, 'finish.basePrice');
 
-  return basePrice * (price / 100) * quantity;
+  return roundMoney(basePrice * (price / 100));
 }
 
 export function calculateQuoteTotal(
   input: QuoteCalculationInput,
 ): QuoteCalculationResult {
   const area = calculateArea(input.stone.dimensions);
+  const thicknessMultiplier = resolveThicknessMultiplier(input.stone.thickness);
   const stonePrice = calculateStonePrice(input.stone);
   const sinkPrice = calculateSinkPrice(input.sink);
   const finishPrice = input.finish
@@ -98,12 +129,15 @@ export function calculateQuoteTotal(
         dimensions: input.finish.dimensions ?? input.stone.dimensions,
       })
     : 0;
+  const subtotal = roundMoney(stonePrice + sinkPrice + finishPrice);
 
   return {
     area,
     stonePrice,
     sinkPrice,
     finishPrice,
-    total: stonePrice + sinkPrice + finishPrice,
+    thicknessMultiplier,
+    subtotal,
+    total: subtotal,
   };
 }

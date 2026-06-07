@@ -6,6 +6,7 @@ export type QuoteDimensions = {
 export type StoneQuoteInput = {
   dimensions: QuoteDimensions;
   pricePerM2: number;
+  thickness?: number;
   quantity?: number;
 };
 
@@ -35,5 +36,7 @@ export type QuoteCalculationResult = {
   stonePrice: number;
   sinkPrice: number;
   finishPrice: number;
+  thicknessMultiplier: number;
+  subtotal: number;
   total: number;
 };
