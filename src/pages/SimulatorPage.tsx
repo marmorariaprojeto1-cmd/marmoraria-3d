@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { hasSupabaseConfig, supabase } from '../lib/supabase';
 import { calculateQuoteTotal } from '../services/quoteCalculator';
 import type { FinishPricingType } from '../types/quote';
@@ -38,6 +38,28 @@ type SimulatorCatalog = {
   stones: StoneCatalogItem[];
   sinks: SinkCatalogItem[];
   finishes: FinishCatalogItem[];
+};
+
+type SaveQuoteInput = {
+  companyId: string;
+  customer: {
+    name: string;
+    phone: string;
+    email?: string;
+    city?: string;
+  };
+  item: {
+    productId: string;
+    stoneId: string;
+    sinkId: string | null;
+    finishId: string | null;
+    width: number;
+    depth: number;
+    thickness: number;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  };
 };
 
 type OptionCardProps = {
@@ -152,6 +174,47 @@ async function fetchSimulatorCatalog(companyId: string): Promise<SimulatorCatalo
   };
 }
 
+async function saveCompletedQuote(input: SaveQuoteInput) {
+  const { data: quote, error: quoteError } = await supabase
+    .from('quotes')
+    .insert({
+      company_id: input.companyId,
+      customer_name: input.customer.name,
+      customer_phone: input.customer.phone,
+      customer_email: input.customer.email || null,
+      city: input.customer.city || null,
+      status: 'submitted',
+      total_price: input.item.totalPrice,
+    })
+    .select('id')
+    .single();
+
+  if (quoteError) {
+    throw quoteError;
+  }
+
+  const { error: itemError } = await supabase.from('quote_items').insert({
+    company_id: input.companyId,
+    quote_id: quote.id,
+    product_id: input.item.productId,
+    stone_id: input.item.stoneId,
+    sink_id: input.item.sinkId,
+    finish_id: input.item.finishId,
+    width: input.item.width,
+    depth: input.item.depth,
+    thickness: input.item.thickness,
+    quantity: input.item.quantity,
+    unit_price: input.item.unitPrice,
+    total_price: input.item.totalPrice,
+  });
+
+  if (itemError) {
+    throw itemError;
+  }
+
+  return quote.id as string;
+}
+
 function getStonePreviewClass(stoneId?: string) {
   const variants = [
     'from-stone-400 via-stone-300 to-stone-500',
@@ -192,7 +255,13 @@ export function SimulatorPage() {
   const [finishId, setFinishId] = useState('');
   const [width, setWidth] = useState('2.00');
   const [depth, setDepth] = useState('0.60');
+  const [thickness, setThickness] = useState('2.00');
   const [quantity, setQuantity] = useState('1');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerCity, setCustomerCity] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [savedQuoteId, setSavedQuoteId] = useState('');
 
   const canFetchCatalog = Boolean(hasSupabaseConfig && simulatorCompanyId);
 
@@ -246,6 +315,7 @@ export function SimulatorPage() {
     [depth, width],
   );
   const resolvedQuantity = Math.max(1, Math.floor(Number(quantity) || 1));
+  const resolvedThickness = Number(thickness) || 0;
 
   const quote = useMemo(
     () =>
@@ -289,6 +359,52 @@ export function SimulatorPage() {
   const previewWidth = Math.min(100, Math.max(45, dimensions.width * 35));
   const previewHeight = Math.min(70, Math.max(22, dimensions.depth * 70));
   const isLastStep = currentStep === simulatorSteps.length - 1;
+  const unitPrice = quote.total / resolvedQuantity;
+  const canSaveQuote = Boolean(
+    canFetchCatalog &&
+      selectedProduct &&
+      selectedStone &&
+      dimensions.width > 0 &&
+      dimensions.depth > 0 &&
+      resolvedThickness > 0 &&
+      resolvedQuantity > 0 &&
+      quote.total > 0 &&
+      customerName.trim() &&
+      customerPhone.trim(),
+  );
+
+  const saveQuoteMutation = useMutation({
+    mutationFn: () => {
+      if (!simulatorCompanyId || !selectedProduct || !selectedStone) {
+        throw new Error('Dados obrigatórios do orçamento não foram selecionados.');
+      }
+
+      return saveCompletedQuote({
+        companyId: simulatorCompanyId,
+        customer: {
+          name: customerName.trim(),
+          phone: customerPhone.trim(),
+          email: customerEmail.trim(),
+          city: customerCity.trim(),
+        },
+        item: {
+          productId: selectedProduct.id,
+          stoneId: selectedStone.id,
+          sinkId: selectedSink?.id ?? null,
+          finishId: selectedFinish?.id ?? null,
+          width: dimensions.width,
+          depth: dimensions.depth,
+          thickness: resolvedThickness,
+          quantity: resolvedQuantity,
+          unitPrice,
+          totalPrice: quote.total,
+        },
+      });
+    },
+    onSuccess: (quoteId) => {
+      setSavedQuoteId(quoteId);
+    },
+  });
 
   function goBack() {
     setCurrentStep((step) => Math.max(0, step - 1));
@@ -296,6 +412,11 @@ export function SimulatorPage() {
 
   function goNext() {
     setCurrentStep((step) => Math.min(simulatorSteps.length - 1, step + 1));
+  }
+
+  function handleSaveQuote() {
+    setSavedQuoteId('');
+    saveQuoteMutation.mutate();
   }
 
   return (
@@ -306,9 +427,9 @@ export function SimulatorPage() {
           Simulador 2D inicial
         </h1>
         <p className="mt-3 max-w-3xl text-stone-700">
-          Configure uma peça em etapas usando o catálogo ativo da marmoraria e
-          veja o orçamento estimado em tempo real. Esta versão não salva
-          orçamento, não usa WhatsApp e não possui 3D.
+          Configure uma peça em etapas usando o catálogo ativo da marmoraria,
+          veja o orçamento estimado em tempo real e salve a solicitação no
+          Supabase. Esta versão não usa WhatsApp e não possui 3D.
         </p>
       </div>
 
@@ -445,7 +566,7 @@ export function SimulatorPage() {
                     Informe medidas em metros e a quantidade de peças.
                   </p>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <label className="block space-y-2">
                     <span className="text-sm font-medium text-stone-700">
                       Largura (m)
@@ -471,6 +592,20 @@ export function SimulatorPage() {
                       step="0.01"
                       value={depth}
                       onChange={(event) => setDepth(event.target.value)}
+                    />
+                  </label>
+
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-stone-700">
+                      Espessura (cm)
+                    </span>
+                    <input
+                      className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={thickness}
+                      onChange={(event) => setThickness(event.target.value)}
                     />
                   </label>
 
@@ -585,8 +720,89 @@ export function SimulatorPage() {
                       2,
                     )}m x ${dimensions.depth.toFixed(
                       2,
-                    )}m · qtd. ${resolvedQuantity}`}
+                    )}m · esp. ${resolvedThickness.toFixed(
+                      1,
+                    )}cm · qtd. ${resolvedQuantity}`}
                   />
+                </div>
+
+                <div className="rounded-lg border border-stoneLine bg-stone-50 p-4">
+                  <h3 className="text-sm font-semibold uppercase text-stone-600">
+                    Dados para salvar
+                  </h3>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <label className="block space-y-2">
+                      <span className="text-sm font-medium text-stone-700">
+                        Nome
+                      </span>
+                      <input
+                        className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+                        value={customerName}
+                        onChange={(event) => setCustomerName(event.target.value)}
+                      />
+                    </label>
+                    <label className="block space-y-2">
+                      <span className="text-sm font-medium text-stone-700">
+                        Telefone
+                      </span>
+                      <input
+                        className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+                        value={customerPhone}
+                        onChange={(event) => setCustomerPhone(event.target.value)}
+                      />
+                    </label>
+                    <label className="block space-y-2">
+                      <span className="text-sm font-medium text-stone-700">
+                        Cidade
+                      </span>
+                      <input
+                        className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+                        value={customerCity}
+                        onChange={(event) => setCustomerCity(event.target.value)}
+                      />
+                    </label>
+                    <label className="block space-y-2">
+                      <span className="text-sm font-medium text-stone-700">
+                        E-mail opcional
+                      </span>
+                      <input
+                        className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+                        type="email"
+                        value={customerEmail}
+                        onChange={(event) => setCustomerEmail(event.target.value)}
+                      />
+                    </label>
+                  </div>
+
+                  {saveQuoteMutation.isError && (
+                    <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+                      Não foi possível salvar o orçamento. Verifique as
+                      permissões do Supabase para quotes e quote_items.
+                    </p>
+                  )}
+
+                  {savedQuoteId && (
+                    <p className="mt-4 rounded-md bg-green-50 p-3 text-sm text-green-700">
+                      Orçamento salvo com sucesso. ID: {savedQuoteId}
+                    </p>
+                  )}
+
+                  <button
+                    className="mt-4 rounded-md bg-graphite px-5 py-3 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-400"
+                    type="button"
+                    onClick={handleSaveQuote}
+                    disabled={!canSaveQuote || saveQuoteMutation.isPending}
+                  >
+                    {saveQuoteMutation.isPending
+                      ? 'Salvando orçamento...'
+                      : 'Salvar orçamento'}
+                  </button>
+                  {!canSaveQuote && (
+                    <p className="mt-3 text-sm text-stone-600">
+                      Preencha nome, telefone, produto, pedra e medidas válidas
+                      para salvar.
+                    </p>
+                  )}
                 </div>
               </div>
             )}
