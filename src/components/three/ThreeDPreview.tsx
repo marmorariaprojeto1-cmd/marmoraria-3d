@@ -1,5 +1,5 @@
 import { Component, Suspense, useMemo, type ReactNode } from 'react';
-import { OrbitControls, useTexture } from '@react-three/drei';
+import { ContactShadows, OrbitControls, RoundedBox, useTexture } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { ThreeDPreviewProps } from '../../types/threePreview';
@@ -51,26 +51,44 @@ function resolveStoneColor(stoneName: string) {
   const normalized = stoneName.toLowerCase();
 
   if (normalized.includes('preto') || normalized.includes('nero')) {
-    return '#2f3032';
+    return '#25282a';
   }
 
   if (normalized.includes('branco') || normalized.includes('calacatta')) {
-    return '#e7e2d7';
+    return '#ded9ce';
   }
 
   if (normalized.includes('verde')) {
-    return '#586b52';
+    return '#4e6250';
   }
 
   if (normalized.includes('cinza')) {
-    return '#8a8c87';
+    return '#858883';
   }
 
   if (normalized.includes('travertino') || normalized.includes('crema')) {
-    return '#b9a886';
+    return '#b6a47f';
   }
 
-  return '#9a9488';
+  return '#928c80';
+}
+
+function resolveVeinColor(stoneName: string) {
+  const normalized = stoneName.toLowerCase();
+
+  if (normalized.includes('preto') || normalized.includes('nero')) {
+    return '#62666a';
+  }
+
+  if (normalized.includes('branco') || normalized.includes('calacatta')) {
+    return '#9b958b';
+  }
+
+  if (normalized.includes('verde')) {
+    return '#2f3d32';
+  }
+
+  return '#6f6a61';
 }
 
 function CountertopMaterial({
@@ -89,8 +107,8 @@ function CountertopMaterial({
   return (
     <meshStandardMaterial
       color={fallbackColor}
-      roughness={0.68}
-      metalness={0.03}
+      roughness={0.48}
+      metalness={0.02}
     />
   );
 }
@@ -111,9 +129,57 @@ function TexturedCountertopMaterial({
     <meshStandardMaterial
       color="#ffffff"
       map={texture}
-      roughness={0.68}
+      roughness={0.5}
       metalness={0.03}
     />
+  );
+}
+
+function StoneVeins({
+  width,
+  depth,
+  thickness,
+  stoneName,
+}: {
+  width: number;
+  depth: number;
+  thickness: number;
+  stoneName: string;
+}) {
+  const veins = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, index) => {
+        const progress = (index + 1) / 8;
+
+        return {
+          x: width * (progress - 0.5),
+          z: depth * (0.18 * Math.sin(index * 1.7)),
+          length: width * (0.48 + (index % 3) * 0.12),
+          opacity: 0.13 + (index % 2) * 0.06,
+          rotation: -0.22 + index * 0.075,
+        };
+      }),
+    [depth, width],
+  );
+
+  return (
+    <group position={[0, thickness / 2 + 0.004, 0]}>
+      {veins.map((vein) => (
+        <mesh
+          key={`${vein.x}-${vein.length}`}
+          position={[vein.x, 0, vein.z]}
+          rotation={[-Math.PI / 2, 0, vein.rotation]}
+        >
+          <planeGeometry args={[vein.length, 0.012]} />
+          <meshBasicMaterial
+            color={resolveVeinColor(stoneName)}
+            transparent
+            opacity={vein.opacity}
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
+    </group>
   );
 }
 
@@ -126,74 +192,120 @@ function CountertopScene({
   sinkEnabled,
 }: ThreeDPreviewProps) {
   const model = useMemo(() => {
-    const safeWidth = Math.min(4, Math.max(0.6, width || 0.6));
-    const safeDepth = Math.min(2.4, Math.max(0.35, depth || 0.35));
-    const visualThickness = Math.min(0.18, Math.max(0.06, thickness / 25));
-    const sinkWidth = Math.min(safeWidth * 0.28, 0.58);
-    const sinkDepth = Math.min(safeDepth * 0.42, 0.42);
+    const safeWidth = Math.min(3.6, Math.max(0.8, width || 0.8));
+    const safeDepth = Math.min(1.75, Math.max(0.42, depth || 0.42));
+    const visualThickness = Math.min(0.24, Math.max(0.08, thickness / 19));
+    const sinkRadius = Math.min(safeWidth * 0.16, safeDepth * 0.36, 0.34);
 
     return {
       width: safeWidth,
       depth: safeDepth,
       thickness: visualThickness,
-      sinkWidth,
-      sinkDepth,
+      sinkRadius,
     };
   }, [depth, thickness, width]);
 
   return (
     <>
-      <ambientLight intensity={0.72} />
-      <directionalLight position={[3, 4, 5]} intensity={1.4} />
-      <directionalLight position={[-4, 2, -3]} intensity={0.45} />
+      <color attach="background" args={['#eeeae4']} />
+      <ambientLight intensity={0.52} />
+      <hemisphereLight args={['#fff7e8', '#9b9284', 1.2]} />
+      <directionalLight
+        castShadow
+        position={[3.5, 4.2, 3.2]}
+        intensity={1.75}
+        shadow-bias={-0.0008}
+        shadow-mapSize={[1024, 1024]}
+      />
+      <directionalLight position={[-3, 1.8, -2.5]} intensity={0.35} />
 
-      <group rotation={[0, -0.2, 0]}>
+      <group position={[0, 0.12, 0]} rotation={[0, -0.18, 0]}>
         <mesh castShadow receiveShadow position={[0, 0, 0]}>
-          <boxGeometry args={[model.width, model.thickness, model.depth]} />
+          <RoundedBox
+            args={[model.width, model.thickness, model.depth]}
+            radius={0.035}
+            smoothness={5}
+          />
           <CountertopMaterial
             stoneName={stoneName}
             stoneImageUrl={stoneImageUrl}
           />
         </mesh>
+        {!stoneImageUrl && (
+          <StoneVeins
+            width={model.width}
+            depth={model.depth}
+            thickness={model.thickness}
+            stoneName={stoneName}
+          />
+        )}
+
+        <mesh
+          position={[0, -model.thickness / 2 - 0.006, model.depth / 2 - 0.018]}
+          receiveShadow
+        >
+          <boxGeometry args={[model.width * 0.98, 0.018, 0.028]} />
+          <meshStandardMaterial color="#6f6a60" roughness={0.55} />
+        </mesh>
 
         {sinkEnabled && (
-          <group position={[model.width * 0.18, model.thickness / 2 + 0.008, 0]}>
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <group
+            position={[
+              model.width * 0.18,
+              model.thickness / 2 + 0.006,
+              -model.depth * 0.02,
+            ]}
+            scale={[1.32, 1, 0.82]}
+          >
+            <mesh receiveShadow position={[0, -0.012, 0]}>
               <cylinderGeometry
                 args={[
-                  Math.min(model.sinkWidth, model.sinkDepth) / 2,
-                  Math.min(model.sinkWidth, model.sinkDepth) / 2,
-                  0.014,
-                  48,
+                  model.sinkRadius,
+                  model.sinkRadius * 0.86,
+                  0.05,
+                  64,
                 ]}
               />
-              <meshStandardMaterial color="#30383b" roughness={0.85} />
+              <meshStandardMaterial color="#242b2d" roughness={0.88} />
             </mesh>
-            <mesh position={[0, 0.004, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}>
               <ringGeometry
                 args={[
-                  Math.min(model.sinkWidth, model.sinkDepth) / 2,
-                  Math.min(model.sinkWidth, model.sinkDepth) / 2 + 0.025,
-                  48,
+                  model.sinkRadius * 0.92,
+                  model.sinkRadius * 1.04,
+                  64,
                 ]}
               />
-              <meshStandardMaterial color="#d4d0c5" roughness={0.52} />
+              <meshStandardMaterial
+                color="#c7c0b4"
+                roughness={0.34}
+                metalness={0.18}
+              />
             </mesh>
           </group>
         )}
       </group>
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.11, 0]} receiveShadow>
-        <planeGeometry args={[5.2, 3.4]} />
-        <meshStandardMaterial color="#eeeae1" roughness={0.9} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
+        <planeGeometry args={[5.4, 3.6]} />
+        <shadowMaterial transparent opacity={0.08} />
       </mesh>
+      <ContactShadows
+        position={[0, -0.01, 0]}
+        opacity={0.42}
+        scale={4.6}
+        blur={2.8}
+        far={1.8}
+      />
 
       <OrbitControls
         enablePan={false}
         enableDamping
-        minDistance={1.8}
-        maxDistance={6}
+        dampingFactor={0.08}
+        minDistance={1.55}
+        maxDistance={5.2}
         maxPolarAngle={Math.PI / 2.08}
+        target={[0, 0.12, 0]}
       />
     </>
   );
@@ -236,7 +348,7 @@ export function ThreeDPreview(props: ThreeDPreviewProps) {
         <PreviewErrorBoundary>
           <Suspense fallback={<PreviewFallback />}>
             <Canvas
-              camera={{ position: [2.2, 1.45, 2.35], fov: 42 }}
+              camera={{ position: [2.35, 1.25, 2.05], fov: 36 }}
               shadows
               dpr={[1, 1.8]}
             >
