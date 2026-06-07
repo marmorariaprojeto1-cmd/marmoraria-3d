@@ -4,6 +4,7 @@ import { ProtectedAdminPage } from './pages/AdminPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { FinishesPage } from './pages/admin/FinishesPage';
 import { AdminPlaceholderPage } from './pages/admin/AdminPlaceholderPage';
+import { ProductsPage } from './pages/admin/ProductsPage';
 import { SinksPage } from './pages/admin/SinksPage';
 import { StonesPage } from './pages/admin/StonesPage';
 import { HomePage } from './pages/HomePage';
@@ -59,13 +60,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'produtos',
-            element: (
-              <AdminPlaceholderPage
-                eyebrow="Catálogo"
-                title="Produtos"
-                description="Gestão futura dos tipos de peças oferecidos pela marmoraria."
-              />
-            ),
+            element: <ProductsPage />,
           },
           {
             path: 'configuracoes',
