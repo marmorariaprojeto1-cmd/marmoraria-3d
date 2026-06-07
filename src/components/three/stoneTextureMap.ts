@@ -18,3 +18,9 @@ function normalizeStoneName(stoneName: string) {
 export function resolveLocalStoneTexture(stoneName: string) {
   return stoneTextureMap[normalizeStoneName(stoneName)] ?? null;
 }
+
+export function isSupportedStoneTexturePath(texturePath: string) {
+  const normalizedPath = texturePath.split(/[?#]/)[0].toLowerCase();
+
+  return /\.(jpe?g|png|webp)$/.test(normalizedPath);
+}

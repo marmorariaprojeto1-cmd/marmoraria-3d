@@ -1,9 +1,19 @@
-import { Component, Suspense, useMemo, type ReactNode } from 'react';
-import { ContactShadows, OrbitControls, RoundedBox, useTexture } from '@react-three/drei';
+import {
+  Component,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+import { ContactShadows, OrbitControls, RoundedBox } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { ThreeDPreviewProps } from '../../types/threePreview';
-import { resolveLocalStoneTexture } from './stoneTextureMap';
+import {
+  isSupportedStoneTexturePath,
+  resolveLocalStoneTexture,
+} from './stoneTextureMap';
 
 type PreviewErrorBoundaryProps = {
   children: ReactNode;
@@ -92,46 +102,78 @@ function resolveVeinColor(stoneName: string) {
   return '#6f6a61';
 }
 
-function CountertopMaterial({
-  stoneName,
-  stoneImageUrl,
-}: {
-  stoneName: string;
-  stoneImageUrl?: string | null;
-}) {
-  const fallbackColor = resolveStoneColor(stoneName);
-  const resolvedTextureUrl = stoneImageUrl ?? resolveLocalStoneTexture(stoneName);
+function resolveUsableTextureUrl(stoneName: string, stoneImageUrl?: string | null) {
+  const textureUrl = stoneImageUrl ?? resolveLocalStoneTexture(stoneName);
 
-  if (resolvedTextureUrl) {
-    return <TexturedCountertopMaterial stoneImageUrl={resolvedTextureUrl} />;
+  if (!textureUrl || !isSupportedStoneTexturePath(textureUrl)) {
+    return null;
   }
 
-  return (
-    <meshStandardMaterial
-      color={fallbackColor}
-      roughness={0.48}
-      metalness={0.02}
-    />
-  );
+  return textureUrl;
 }
 
-function TexturedCountertopMaterial({
-  stoneImageUrl,
-}: {
-  stoneImageUrl: string;
-}) {
-  const texture = useTexture(stoneImageUrl);
-
+function configureTexture(texture: THREE.Texture) {
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(2.4, 1.4);
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+}
+
+function useSafeTexture(textureUrl: string | null) {
+  const [texture, setTexture] = useState<THREE.Texture | null>(null);
+
+  useEffect(() => {
+    if (!textureUrl) {
+      setTexture(null);
+      return;
+    }
+
+    let active = true;
+    const loader = new THREE.TextureLoader();
+
+    loader.load(
+      textureUrl,
+      (loadedTexture) => {
+        if (!active) {
+          loadedTexture.dispose();
+          return;
+        }
+
+        configureTexture(loadedTexture);
+        setTexture(loadedTexture);
+      },
+      undefined,
+      () => {
+        if (active) {
+          setTexture(null);
+        }
+      },
+    );
+
+    return () => {
+      active = false;
+      setTexture(null);
+    };
+  }, [textureUrl]);
+
+  return texture;
+}
+
+function CountertopMaterial({
+  stoneName,
+  texture,
+}: {
+  stoneName: string;
+  texture: THREE.Texture | null;
+}) {
+  const fallbackColor = resolveStoneColor(stoneName);
 
   return (
     <meshStandardMaterial
-      color="#ffffff"
-      map={texture}
-      roughness={0.5}
+      color={texture ? '#ffffff' : fallbackColor}
+      map={texture ?? undefined}
+      roughness={texture ? 0.5 : 0.48}
       metalness={0.03}
     />
   );
@@ -193,7 +235,8 @@ function CountertopScene({
   stoneImageUrl,
   sinkEnabled,
 }: ThreeDPreviewProps) {
-  const resolvedTextureUrl = stoneImageUrl ?? resolveLocalStoneTexture(stoneName);
+  const resolvedTextureUrl = resolveUsableTextureUrl(stoneName, stoneImageUrl);
+  const texture = useSafeTexture(resolvedTextureUrl);
   const model = useMemo(() => {
     const safeWidth = Math.min(3.6, Math.max(0.8, width || 0.8));
     const safeDepth = Math.min(1.75, Math.max(0.42, depth || 0.42));
@@ -231,10 +274,10 @@ function CountertopScene({
           />
           <CountertopMaterial
             stoneName={stoneName}
-            stoneImageUrl={stoneImageUrl}
+            texture={texture}
           />
         </mesh>
-        {!resolvedTextureUrl && (
+        {!texture && (
           <StoneVeins
             width={model.width}
             depth={model.depth}
