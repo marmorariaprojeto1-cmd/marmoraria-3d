@@ -163,11 +163,17 @@ function useSafeTexture(textureUrl: string | null) {
 function CountertopMaterial({
   stoneName,
   texture,
+  colorOffset = 0,
 }: {
   stoneName: string;
   texture: THREE.Texture | null;
+  colorOffset?: number;
 }) {
-  const fallbackColor = resolveStoneColor(stoneName);
+  const fallbackColor = new THREE.Color(resolveStoneColor(stoneName)).offsetHSL(
+    0,
+    0,
+    colorOffset,
+  );
 
   return (
     <meshStandardMaterial
@@ -241,12 +247,16 @@ function CountertopScene({
     const safeWidth = Math.min(3.6, Math.max(0.8, width || 0.8));
     const safeDepth = Math.min(1.75, Math.max(0.42, depth || 0.42));
     const visualThickness = Math.min(0.24, Math.max(0.08, thickness / 19));
+    const backsplashHeight = Math.min(0.42, Math.max(0.24, safeDepth * 0.28));
+    const skirtHeight = Math.min(0.34, Math.max(0.18, visualThickness * 1.7));
     const sinkRadius = Math.min(safeWidth * 0.16, safeDepth * 0.36, 0.34);
 
     return {
       width: safeWidth,
       depth: safeDepth,
       thickness: visualThickness,
+      backsplashHeight,
+      skirtHeight,
       sinkRadius,
     };
   }, [depth, thickness, width]);
@@ -277,6 +287,54 @@ function CountertopScene({
             texture={texture}
           />
         </mesh>
+        <mesh
+          castShadow
+          receiveShadow
+          position={[
+            0,
+            model.thickness / 2 + model.backsplashHeight / 2 - 0.008,
+            -model.depth / 2 + 0.035,
+          ]}
+        >
+          <RoundedBox
+            args={[
+              model.width * 0.98,
+              model.backsplashHeight,
+              Math.min(0.075, model.depth * 0.12),
+            ]}
+            radius={0.018}
+            smoothness={4}
+          />
+          <CountertopMaterial
+            stoneName={stoneName}
+            texture={texture}
+            colorOffset={-0.03}
+          />
+        </mesh>
+        <mesh
+          castShadow
+          receiveShadow
+          position={[
+            0,
+            -model.thickness / 2 - model.skirtHeight / 2 + 0.012,
+            model.depth / 2 - 0.028,
+          ]}
+        >
+          <RoundedBox
+            args={[
+              model.width * 0.985,
+              model.skirtHeight,
+              Math.min(0.09, model.depth * 0.14),
+            ]}
+            radius={0.02}
+            smoothness={4}
+          />
+          <CountertopMaterial
+            stoneName={stoneName}
+            texture={texture}
+            colorOffset={-0.05}
+          />
+        </mesh>
         {!texture && (
           <StoneVeins
             width={model.width}
@@ -287,7 +345,11 @@ function CountertopScene({
         )}
 
         <mesh
-          position={[0, -model.thickness / 2 - 0.006, model.depth / 2 - 0.018]}
+          position={[
+            0,
+            -model.thickness / 2 - model.skirtHeight - 0.006,
+            model.depth / 2 - 0.018,
+          ]}
           receiveShadow
         >
           <boxGeometry args={[model.width * 0.98, 0.018, 0.028]} />
