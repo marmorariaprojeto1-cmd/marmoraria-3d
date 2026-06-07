@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ProtectedAdminPage } from './pages/AdminPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import { FinishesPage } from './pages/admin/FinishesPage';
 import { AdminPlaceholderPage } from './pages/admin/AdminPlaceholderPage';
 import { SinksPage } from './pages/admin/SinksPage';
 import { StonesPage } from './pages/admin/StonesPage';
@@ -54,13 +55,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'acabamentos',
-            element: (
-              <AdminPlaceholderPage
-                eyebrow="Catálogo"
-                title="Acabamentos"
-                description="Gestão futura de acabamentos, bordas, rodabancas e saias."
-              />
-            ),
+            element: <FinishesPage />,
           },
           {
             path: 'produtos',
