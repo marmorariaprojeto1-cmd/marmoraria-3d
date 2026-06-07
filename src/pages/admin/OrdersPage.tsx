@@ -239,20 +239,20 @@ export function OrdersPage() {
   }
 
   return (
-    <section className="space-y-6">
+    <section className="page-shell">
       <div>
-        <p className="text-sm font-semibold uppercase text-moss">Pedidos</p>
-        <h1 className="mt-2 text-3xl font-bold text-graphite">
+        <p className="page-kicker">Pedidos</p>
+        <h1 className="page-title">
           Pedidos recebidos
         </h1>
-        <p className="mt-3 max-w-3xl text-stone-700">
+        <p className="page-description">
           Acompanhe os orçamentos enviados pelos clientes e atualize o status
           comercial sem sair do painel da marmoraria.
         </p>
       </div>
 
       {!companyId && !loading && (
-        <div className="rounded-md border border-copper/30 bg-orange-50 p-4 text-sm text-stone-800">
+        <div className="message-warning">
           Nenhuma empresa foi vinculada ao usuário autenticado. Para preservar a
           arquitetura multiempresa, os pedidos ficam bloqueados até existir um
           vínculo ativo em public.users com o mesmo e-mail do login.
@@ -260,18 +260,18 @@ export function OrdersPage() {
       )}
 
       {errorMessage && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
+        <div className="message-error">
           {errorMessage}
         </div>
       )}
 
       {successMessage && (
-        <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">
+        <div className="message-success">
           {successMessage}
         </div>
       )}
 
-      <div className="rounded-lg border border-stoneLine bg-white shadow-sm">
+      <div className="surface-card overflow-hidden">
         <div className="border-b border-stoneLine p-5">
           <h2 className="text-lg font-semibold text-graphite">
             Lista de pedidos
@@ -284,13 +284,13 @@ export function OrdersPage() {
         {loading ? (
           <p className="p-5 text-stone-700">Carregando pedidos...</p>
         ) : quotes.length === 0 ? (
-          <p className="p-5 text-stone-700">
+          <p className="m-5 rounded-md bg-stone-50 p-4 text-stone-700">
             Nenhum pedido foi encontrado para esta empresa.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-stoneLine text-sm">
-              <thead className="bg-stone-50 text-left text-xs font-semibold uppercase text-stone-600">
+              <thead className="table-head">
                 <tr>
                   <th className="px-4 py-3">Cliente</th>
                   <th className="px-4 py-3">Telefone</th>
@@ -304,18 +304,18 @@ export function OrdersPage() {
               <tbody className="divide-y divide-stoneLine">
                 {quotes.map((quote) => (
                   <tr key={quote.id} className="align-top">
-                    <td className="px-4 py-3 font-medium text-graphite">
+                    <td className="table-cell font-medium text-graphite">
                       {quote.customer_name}
                     </td>
-                    <td className="px-4 py-3 text-stone-700">
+                    <td className="table-cell text-stone-700">
                       {quote.customer_phone}
                     </td>
-                    <td className="px-4 py-3 text-stone-700">
+                    <td className="table-cell text-stone-700">
                       {quote.city || 'Não informada'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="table-cell">
                       <select
-                        className="rounded-md border border-stoneLine bg-white px-3 py-2 text-sm text-graphite outline-none transition focus:border-moss disabled:cursor-not-allowed disabled:text-stone-400"
+                        className="rounded-md border border-stoneLine bg-white px-3 py-2 text-sm text-graphite outline-none transition focus:border-moss focus:ring-2 focus:ring-moss/20 disabled:cursor-not-allowed disabled:text-stone-400"
                         value={quote.status}
                         onChange={(event) =>
                           void updateQuoteStatus(
@@ -332,15 +332,15 @@ export function OrdersPage() {
                         ))}
                       </select>
                     </td>
-                    <td className="px-4 py-3 font-semibold text-graphite">
+                    <td className="table-cell font-semibold text-graphite">
                       {formatCurrency(quote.total_price)}
                     </td>
-                    <td className="px-4 py-3 text-stone-700">
+                    <td className="table-cell text-stone-700">
                       {formatDate(quote.created_at)}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="table-cell">
                       <button
-                        className="rounded-md border border-stoneLine px-3 py-2 text-sm font-semibold text-graphite transition hover:bg-stone-50"
+                        className="secondary-button px-3 py-2"
                         type="button"
                         onClick={() => void openDetails(quote)}
                       >
@@ -356,7 +356,7 @@ export function OrdersPage() {
       </div>
 
       {selectedQuote && (
-        <div className="rounded-lg border border-stoneLine bg-white p-5 shadow-sm">
+        <div className="surface-card p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase text-moss">
@@ -371,7 +371,7 @@ export function OrdersPage() {
               </p>
             </div>
             <button
-              className="rounded-md border border-stoneLine px-3 py-2 text-sm font-semibold text-graphite transition hover:bg-stone-50"
+              className="secondary-button px-3 py-2"
               type="button"
               onClick={() => {
                 setSelectedQuoteId(null);
@@ -408,10 +408,7 @@ export function OrdersPage() {
             ) : (
               <div className="mt-4 grid gap-4">
                 {quoteItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="rounded-md border border-stoneLine bg-stone-50 p-4"
-                  >
+                  <div key={item.id} className="soft-card p-4">
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                       <SummaryBox
                         label="Produto"
@@ -461,7 +458,7 @@ export function OrdersPage() {
 
 function SummaryBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-stoneLine bg-white p-4">
+    <div className="rounded-md border border-stoneLine bg-white p-4 shadow-sm">
       <p className="text-xs font-semibold uppercase text-stone-500">{label}</p>
       <p className="mt-1 font-medium text-graphite">{value}</p>
     </div>

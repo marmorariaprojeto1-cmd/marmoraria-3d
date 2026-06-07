@@ -13,7 +13,7 @@ const adminNavItems = [
 export function AdminLayout() {
   return (
     <section className="grid gap-6 lg:grid-cols-[240px_1fr]">
-      <aside className="rounded-lg border border-stoneLine bg-white p-4 shadow-sm">
+      <aside className="surface-card h-fit p-4">
         <div className="mb-5">
           <p className="text-xs font-semibold uppercase text-moss">Painel</p>
           <h2 className="mt-1 text-lg font-semibold text-graphite">
@@ -31,7 +31,7 @@ export function AdminLayout() {
                   'whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition',
                   isActive
                     ? 'bg-graphite text-white'
-                    : 'text-stone-700 hover:bg-stone-100',
+                    : 'text-stone-700 hover:bg-stone-100 hover:text-graphite',
                 ].join(' ')
               }
             >

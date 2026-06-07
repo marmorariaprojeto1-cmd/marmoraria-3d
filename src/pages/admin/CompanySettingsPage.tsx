@@ -205,13 +205,13 @@ export function CompanySettingsPage() {
   }
 
   return (
-    <section className="space-y-6">
+    <section className="page-shell">
       <div>
-        <p className="text-sm font-semibold uppercase text-moss">Empresa</p>
-        <h1 className="mt-2 text-3xl font-bold text-graphite">
+        <p className="page-kicker">Empresa</p>
+        <h1 className="page-title">
           Configurações da empresa
         </h1>
-        <p className="mt-3 max-w-3xl text-stone-700">
+        <p className="page-description">
           Edite os dados públicos e operacionais da marmoraria vinculada ao
           usuário autenticado. O vínculo multiempresa não pode ser alterado por
           esta tela.
@@ -219,7 +219,7 @@ export function CompanySettingsPage() {
       </div>
 
       {!companyId && !loading && (
-        <div className="rounded-md border border-copper/30 bg-orange-50 p-4 text-sm text-stone-800">
+        <div className="message-warning">
           Nenhuma empresa foi vinculada ao usuário autenticado. Para preservar a
           arquitetura multiempresa, as configurações ficam bloqueadas até existir
           um vínculo ativo em public.users com o mesmo e-mail do login.
@@ -227,29 +227,29 @@ export function CompanySettingsPage() {
       )}
 
       {errorMessage && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
+        <div className="message-error">
           {errorMessage}
         </div>
       )}
 
       {successMessage && (
-        <div className="rounded-md bg-green-50 p-4 text-sm text-green-700">
+        <div className="message-success">
           {successMessage}
         </div>
       )}
 
       {loading ? (
-        <div className="rounded-lg border border-stoneLine bg-white p-5 text-stone-700 shadow-sm">
+        <div className="surface-card p-5 text-stone-700">
           Carregando configurações...
         </div>
       ) : !company ? (
-        <div className="rounded-lg border border-stoneLine bg-white p-5 text-stone-700 shadow-sm">
+        <div className="surface-card p-5 text-stone-700">
           Empresa não encontrada para o usuário autenticado.
         </div>
       ) : (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
           <form
-            className="space-y-5 rounded-lg border border-stoneLine bg-white p-5 shadow-sm"
+            className="surface-card space-y-5 p-5"
             onSubmit={handleSubmit}
           >
             <div>
@@ -301,7 +301,7 @@ export function CompanySettingsPage() {
                 value={form.state}
                 onChange={(value) => updateForm('state', value)}
               />
-              <label className="flex items-center gap-3 rounded-md border border-stoneLine px-3 py-3">
+              <label className="flex items-center gap-3 rounded-md border border-stoneLine bg-white px-3 py-3 shadow-sm">
                 <input
                   className="h-4 w-4 accent-graphite"
                   type="checkbox"
@@ -316,14 +316,14 @@ export function CompanySettingsPage() {
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <button
-                className="rounded-md bg-graphite px-5 py-3 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-400"
+                className="primary-button"
                 type="submit"
                 disabled={saving || !companyId}
               >
                 {saving ? 'Salvando...' : 'Salvar configurações'}
               </button>
               <button
-                className="rounded-md border border-stoneLine px-5 py-3 text-sm font-semibold text-graphite transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-400"
+                className="secondary-button"
                 type="button"
                 onClick={resetForm}
                 disabled={saving}
@@ -333,7 +333,7 @@ export function CompanySettingsPage() {
             </div>
           </form>
 
-          <aside className="space-y-4 rounded-lg border border-stoneLine bg-white p-5 shadow-sm">
+          <aside className="surface-card space-y-4 p-5">
             <div>
               <p className="text-sm font-semibold uppercase text-moss">
                 Resumo
@@ -382,7 +382,7 @@ function TextField({
     <label className="block space-y-2">
       <span className="text-sm font-medium text-stone-700">{label}</span>
       <input
-        className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+        className="field-input"
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}

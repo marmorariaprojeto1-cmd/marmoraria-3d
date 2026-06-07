@@ -41,32 +41,49 @@ export function LoginPage() {
   }
 
   return (
-    <section className="mx-auto max-w-md space-y-6">
-      <div>
-        <p className="text-sm font-semibold uppercase text-moss">Login</p>
-        <h1 className="mt-2 text-3xl font-bold text-graphite">
-          Acesso administrativo
-        </h1>
-        <p className="mt-3 text-stone-700">
-          Entre para acessar a área administrativa da marmoraria.
-        </p>
+    <section className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+      <div className="space-y-5">
+        <div>
+          <p className="page-kicker">Login</p>
+          <h1 className="page-title">Acesso administrativo</h1>
+          <p className="page-description">
+            Entre para acompanhar pedidos, configurar catálogos e manter os
+            dados da marmoraria atualizados.
+          </p>
+        </div>
+        <div className="soft-card p-4">
+          <p className="text-sm font-semibold text-graphite">
+            Painel multiempresa
+          </p>
+          <p className="mt-2 text-sm text-stone-600">
+            Cada usuário acessa apenas os dados da empresa vinculada ao seu
+            login.
+          </p>
+        </div>
       </div>
 
       {!hasSupabaseConfig && (
-        <div className="rounded-md border border-copper/30 bg-orange-50 p-4 text-sm text-stone-800">
+        <div className="message-warning lg:col-span-2">
           Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no ambiente antes
           de usar o login.
         </div>
       )}
 
       <form
-        className="space-y-4 rounded-lg border border-stoneLine bg-white p-6 shadow-sm"
+        className="surface-card space-y-5 p-6"
         onSubmit={handleSubmit}
       >
+        <div>
+          <h2 className="text-xl font-bold text-graphite">Entrar no painel</h2>
+          <p className="mt-1 text-sm text-stone-600">
+            Use as credenciais configuradas no Supabase.
+          </p>
+        </div>
+
         <label className="block space-y-2">
           <span className="text-sm font-medium text-stone-700">E-mail</span>
           <input
-            className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+            className="field-input"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
@@ -78,7 +95,7 @@ export function LoginPage() {
         <label className="block space-y-2">
           <span className="text-sm font-medium text-stone-700">Senha</span>
           <input
-            className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+            className="field-input"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
@@ -88,13 +105,13 @@ export function LoginPage() {
         </label>
 
         {errorMessage && (
-          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="message-error">
             {errorMessage}
           </p>
         )}
 
         <button
-          className="w-full rounded-md bg-graphite px-5 py-3 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-400"
+          className="primary-button w-full"
           type="submit"
           disabled={submitting || loading}
         >

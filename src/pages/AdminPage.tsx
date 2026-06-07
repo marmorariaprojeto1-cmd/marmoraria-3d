@@ -8,7 +8,7 @@ export function ProtectedAdminPage() {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-stoneLine bg-white p-6 text-stone-700 shadow-sm">
+      <div className="surface-card p-6 text-stone-700">
         Verificando sessão...
       </div>
     );

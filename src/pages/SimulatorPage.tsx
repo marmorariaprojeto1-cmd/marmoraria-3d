@@ -114,10 +114,10 @@ function OptionCard({ title, description, selected, onClick }: OptionCardProps) 
   return (
     <button
       className={[
-        'rounded-lg border p-4 text-left transition',
+        'rounded-lg border p-4 text-left shadow-sm transition hover:-translate-y-0.5',
         selected
-          ? 'border-graphite bg-graphite text-white'
-          : 'border-stoneLine bg-white text-graphite hover:bg-stone-50',
+          ? 'border-graphite bg-graphite text-white shadow-md'
+          : 'border-stoneLine bg-white text-graphite hover:border-moss/50 hover:bg-stone-50',
       ].join(' ')}
       type="button"
       onClick={onClick}
@@ -494,40 +494,50 @@ export function SimulatorPage() {
   }
 
   return (
-    <section className="space-y-8">
-      <div>
-        <p className="text-sm font-semibold uppercase text-moss">Simulador</p>
-        <h1 className="mt-2 text-3xl font-bold text-graphite">
+    <section className="page-shell">
+      <div className="surface-card overflow-hidden">
+        <div className="bg-stone-50 px-5 py-6 sm:px-6">
+          <p className="page-kicker">Simulador</p>
+          <h1 className="page-title">
           Simulador 2D inicial
-        </h1>
-        <p className="mt-3 max-w-3xl text-stone-700">
-          Configure uma peça em etapas usando o catálogo ativo da marmoraria,
-          veja o orçamento estimado em tempo real e salve a solicitação no
-          Supabase. Esta versão não usa WhatsApp e não possui 3D.
-        </p>
+          </h1>
+          <p className="page-description">
+            Configure uma peça em etapas usando o catálogo ativo da marmoraria,
+            veja o orçamento estimado em tempo real e salve a solicitação no
+            Supabase. Esta versão ainda não possui visualização 3D.
+          </p>
+        </div>
       </div>
 
       {!canFetchCatalog && (
-        <div className="rounded-md border border-copper/30 bg-orange-50 p-4 text-sm text-stone-800">
+        <div className="message-warning">
           Configure VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY e
           VITE_SIMULATOR_COMPANY_ID para carregar o catálogo real do simulador.
         </div>
       )}
 
       {isError && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
+        <div className="message-error">
           Não foi possível carregar o catálogo ativo da empresa. Verifique o
           company_id, as permissões e as policies públicas necessárias.
         </div>
       )}
 
       {isCompanyError && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
+        <div className="message-error">
           Não foi possível carregar o WhatsApp da empresa ativa configurada.
         </div>
       )}
 
-      <div className="rounded-lg border border-stoneLine bg-white p-4 shadow-sm">
+      <div className="surface-card p-4">
+        <div className="mb-4 h-2 overflow-hidden rounded-full bg-stone-100">
+          <div
+            className="h-full rounded-full bg-moss transition-all"
+            style={{
+              width: `${((currentStep + 1) / simulatorSteps.length) * 100}%`,
+            }}
+          />
+        </div>
         <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
           {simulatorSteps.map((step, index) => (
             <button
@@ -552,9 +562,11 @@ export function SimulatorPage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
-          <div className="rounded-lg border border-stoneLine bg-white p-5 shadow-sm">
+          <div className="surface-card p-5 sm:p-6">
             {isLoading && (
-              <p className="text-stone-700">Carregando catálogo ativo...</p>
+              <p className="soft-card p-4 text-stone-700">
+                Carregando catálogo ativo...
+              </p>
             )}
 
             {!isLoading && currentStep === 0 && (
@@ -652,7 +664,7 @@ export function SimulatorPage() {
                       Largura (m)
                     </span>
                     <input
-                      className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+                      className="field-input"
                       type="number"
                       min="0"
                       step="0.01"
@@ -666,7 +678,7 @@ export function SimulatorPage() {
                       Profundidade (m)
                     </span>
                     <input
-                      className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+                      className="field-input"
                       type="number"
                       min="0"
                       step="0.01"
@@ -680,7 +692,7 @@ export function SimulatorPage() {
                       Espessura (cm)
                     </span>
                     <input
-                      className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+                      className="field-input"
                       type="number"
                       min="0"
                       step="0.1"
@@ -694,7 +706,7 @@ export function SimulatorPage() {
                       Quantidade
                     </span>
                     <input
-                      className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+                      className="field-input"
                       type="number"
                       min="1"
                       step="1"
@@ -806,7 +818,7 @@ export function SimulatorPage() {
                   />
                 </div>
 
-                <div className="rounded-lg border border-stoneLine bg-stone-50 p-4">
+                <div className="soft-card p-4">
                   <h3 className="text-sm font-semibold uppercase text-stone-600">
                     Dados para salvar
                   </h3>
@@ -816,7 +828,7 @@ export function SimulatorPage() {
                         Nome
                       </span>
                       <input
-                        className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+                        className="field-input"
                         value={customerName}
                         onChange={(event) => setCustomerName(event.target.value)}
                       />
@@ -826,7 +838,7 @@ export function SimulatorPage() {
                         Telefone
                       </span>
                       <input
-                        className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+                        className="field-input"
                         value={customerPhone}
                         onChange={(event) => setCustomerPhone(event.target.value)}
                       />
@@ -836,7 +848,7 @@ export function SimulatorPage() {
                         Cidade
                       </span>
                       <input
-                        className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+                        className="field-input"
                         value={customerCity}
                         onChange={(event) => setCustomerCity(event.target.value)}
                       />
@@ -846,7 +858,7 @@ export function SimulatorPage() {
                         E-mail opcional
                       </span>
                       <input
-                        className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
+                        className="field-input"
                         type="email"
                         value={customerEmail}
                         onChange={(event) => setCustomerEmail(event.target.value)}
@@ -855,20 +867,20 @@ export function SimulatorPage() {
                   </div>
 
                   {saveQuoteMutation.isError && (
-                    <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+                    <p className="message-error mt-4">
                       Não foi possível salvar o orçamento. Verifique as
                       permissões do Supabase para quotes e quote_items.
                     </p>
                   )}
 
                   {savedQuoteId && (
-                    <p className="mt-4 rounded-md bg-green-50 p-3 text-sm text-green-700">
+                    <p className="message-success mt-4">
                       Orçamento salvo com sucesso. ID: {savedQuoteId}
                     </p>
                   )}
 
                   <button
-                    className="mt-4 rounded-md bg-graphite px-5 py-3 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-400"
+                    className="primary-button mt-4"
                     type="button"
                     onClick={handleSaveQuote}
                     disabled={!canSaveQuote || saveQuoteMutation.isPending}
@@ -885,7 +897,7 @@ export function SimulatorPage() {
                   )}
                 </div>
 
-                <div className="rounded-lg border border-stoneLine bg-white p-4">
+                <div className="surface-card p-4">
                   <h3 className="text-sm font-semibold uppercase text-stone-600">
                     Envio pelo WhatsApp
                   </h3>
@@ -894,7 +906,7 @@ export function SimulatorPage() {
                     empresa {company?.name ?? 'configurada'}.
                   </p>
                   <button
-                    className="mt-4 rounded-md bg-green-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-stone-400"
+                    className="success-button mt-4"
                     type="button"
                     onClick={handleWhatsAppRequest}
                     disabled={!canRequestByWhatsApp}
@@ -914,7 +926,7 @@ export function SimulatorPage() {
 
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
             <button
-              className="rounded-md border border-stoneLine px-5 py-3 text-sm font-semibold text-graphite transition hover:bg-white disabled:cursor-not-allowed disabled:text-stone-400"
+              className="secondary-button"
               type="button"
               onClick={goBack}
               disabled={currentStep === 0}
@@ -922,7 +934,7 @@ export function SimulatorPage() {
               Voltar
             </button>
             <button
-              className="rounded-md bg-graphite px-5 py-3 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-400"
+              className="primary-button"
               type="button"
               onClick={goNext}
               disabled={isLastStep}
@@ -933,7 +945,7 @@ export function SimulatorPage() {
         </div>
 
         <aside className="space-y-6">
-          <div className="rounded-lg border border-stoneLine bg-white p-5 shadow-sm">
+          <div className="surface-card p-5">
             <div className="flex flex-col gap-2">
               <div>
                 <h2 className="text-lg font-semibold text-graphite">
@@ -948,10 +960,10 @@ export function SimulatorPage() {
               </span>
             </div>
 
-            <div className="mt-6 flex min-h-56 items-center justify-center rounded-lg bg-stone-100 p-6">
+            <div className="mt-6 flex min-h-60 items-center justify-center rounded-lg border border-stoneLine bg-stone-100 p-6">
               <div
                 className={[
-                  'relative rounded-md border border-stone-400 bg-gradient-to-br bg-cover bg-center shadow-lg',
+                  'relative rounded-md border border-stone-400 bg-gradient-to-br bg-cover bg-center shadow-xl',
                   selectedStone?.image_url
                     ? ''
                     : getStonePreviewClass(selectedStone?.id),
@@ -966,13 +978,13 @@ export function SimulatorPage() {
                 }}
               >
                 {selectedSink && (
-                  <div className="absolute left-1/2 top-1/2 h-12 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-stone-500 bg-white/70 shadow-inner" />
+                  <div className="absolute left-1/2 top-1/2 h-12 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-stone-500 bg-white/75 shadow-inner" />
                 )}
               </div>
             </div>
           </div>
 
-          <div className="rounded-lg border border-stoneLine bg-white p-5 shadow-sm">
+          <div className="surface-card p-5">
             <h2 className="text-lg font-semibold text-graphite">
               Resumo do orçamento
             </h2>
@@ -1004,7 +1016,7 @@ export function SimulatorPage() {
 
 function EmptyCatalogMessage({ label }: { label: string }) {
   return (
-    <div className="rounded-md border border-stoneLine bg-stone-50 p-4 text-sm text-stone-700">
+    <div className="soft-card p-4 text-sm text-stone-700">
       Nenhum registro ativo de {label} foi encontrado para a empresa configurada.
     </div>
   );
@@ -1012,7 +1024,7 @@ function EmptyCatalogMessage({ label }: { label: string }) {
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-stoneLine bg-stone-50 p-4">
+    <div className="soft-card p-4">
       <p className="text-xs font-semibold uppercase text-stone-500">{label}</p>
       <p className="mt-1 font-medium text-graphite">{value}</p>
     </div>

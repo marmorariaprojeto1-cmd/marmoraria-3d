@@ -161,20 +161,20 @@ export function AdminDashboardPage() {
   const latestQuotes = quotes.slice(0, 5);
 
   return (
-    <section className="space-y-6">
+    <section className="page-shell">
       <div>
-        <p className="text-sm font-semibold uppercase text-moss">Dashboard</p>
-        <h1 className="mt-2 text-3xl font-bold text-graphite">
+        <p className="page-kicker">Dashboard</p>
+        <h1 className="page-title">
           Visão geral da marmoraria
         </h1>
-        <p className="mt-3 max-w-3xl text-stone-700">
+        <p className="page-description">
           Indicadores reais de pedidos e oportunidades da empresa vinculada ao
           usuário autenticado.
         </p>
       </div>
 
       {!companyId && !loading && (
-        <div className="rounded-md border border-copper/30 bg-orange-50 p-4 text-sm text-stone-800">
+        <div className="message-warning">
           Nenhuma empresa foi vinculada ao usuário autenticado. Para preservar a
           arquitetura multiempresa, o dashboard fica bloqueado até existir um
           vínculo ativo em public.users com o mesmo e-mail do login.
@@ -182,13 +182,13 @@ export function AdminDashboardPage() {
       )}
 
       {errorMessage && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
+        <div className="message-error">
           {errorMessage}
         </div>
       )}
 
       {loading ? (
-        <div className="rounded-lg border border-stoneLine bg-white p-5 text-stone-700 shadow-sm">
+        <div className="surface-card p-5 text-stone-700">
           Carregando indicadores...
         </div>
       ) : (
@@ -197,7 +197,7 @@ export function AdminDashboardPage() {
             {dashboardCards.map((card) => (
               <div
                 key={card.label}
-                className="rounded-lg border border-stoneLine bg-white p-5 shadow-sm"
+                className="surface-card p-5"
               >
                 <p className="text-sm font-medium text-stone-600">
                   {card.label}
@@ -209,7 +209,7 @@ export function AdminDashboardPage() {
             ))}
           </div>
 
-          <div className="rounded-lg border border-stoneLine bg-white shadow-sm">
+          <div className="surface-card overflow-hidden">
             <div className="border-b border-stoneLine p-5">
               <h2 className="text-lg font-semibold text-graphite">
                 Últimos pedidos
@@ -220,13 +220,13 @@ export function AdminDashboardPage() {
             </div>
 
             {latestQuotes.length === 0 ? (
-              <p className="p-5 text-stone-700">
+              <p className="m-5 rounded-md bg-stone-50 p-4 text-stone-700">
                 Nenhum pedido foi encontrado para esta empresa.
               </p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-stoneLine text-sm">
-                  <thead className="bg-stone-50 text-left text-xs font-semibold uppercase text-stone-600">
+                  <thead className="table-head">
                     <tr>
                       <th className="px-4 py-3">Cliente</th>
                       <th className="px-4 py-3">Telefone</th>
@@ -239,22 +239,22 @@ export function AdminDashboardPage() {
                   <tbody className="divide-y divide-stoneLine">
                     {latestQuotes.map((quote) => (
                       <tr key={quote.id}>
-                        <td className="px-4 py-3 font-medium text-graphite">
+                        <td className="table-cell font-medium text-graphite">
                           {quote.customer_name}
                         </td>
-                        <td className="px-4 py-3 text-stone-700">
+                        <td className="table-cell text-stone-700">
                           {quote.customer_phone}
                         </td>
-                        <td className="px-4 py-3 text-stone-700">
+                        <td className="table-cell text-stone-700">
                           {quote.city || 'Não informada'}
                         </td>
-                        <td className="px-4 py-3 text-stone-700">
+                        <td className="table-cell text-stone-700">
                           {statusLabels[quote.status]}
                         </td>
-                        <td className="px-4 py-3 font-semibold text-graphite">
+                        <td className="table-cell font-semibold text-graphite">
                           {formatCurrency(quote.total_price)}
                         </td>
-                        <td className="px-4 py-3 text-stone-700">
+                        <td className="table-cell text-stone-700">
                           {formatDate(quote.created_at)}
                         </td>
                       </tr>
