@@ -2,8 +2,8 @@ import { createBrowserRouter } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ProtectedAdminPage } from './pages/AdminPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import { CompanySettingsPage } from './pages/admin/CompanySettingsPage';
 import { FinishesPage } from './pages/admin/FinishesPage';
-import { AdminPlaceholderPage } from './pages/admin/AdminPlaceholderPage';
 import { OrdersPage } from './pages/admin/OrdersPage';
 import { ProductsPage } from './pages/admin/ProductsPage';
 import { SinksPage } from './pages/admin/SinksPage';
@@ -59,13 +59,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'configuracoes',
-            element: (
-              <AdminPlaceholderPage
-                eyebrow="Empresa"
-                title="Configurações"
-                description="Configurações futuras da empresa, WhatsApp, dados comerciais e preferências."
-              />
-            ),
+            element: <CompanySettingsPage />,
           },
         ],
       },
