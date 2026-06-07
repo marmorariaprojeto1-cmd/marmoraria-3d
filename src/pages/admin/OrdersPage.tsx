@@ -34,6 +34,21 @@ type QuoteItem = {
   quantity: number;
   unit_price: number;
   total_price: number;
+  calculated_area: number | null;
+  stone_price_snapshot: number | null;
+  sink_price_snapshot: number | null;
+  finish_price_snapshot: number | null;
+  thickness_multiplier: number | null;
+  subtotal_snapshot: number | null;
+  total_snapshot: number | null;
+  product_name_snapshot: string | null;
+  stone_name_snapshot: string | null;
+  sink_name_snapshot: string | null;
+  finish_name_snapshot: string | null;
+  stone_price_per_m2_snapshot: number | null;
+  sink_unit_price_snapshot: number | null;
+  finish_unit_price_snapshot: number | null;
+  finish_pricing_type_snapshot: string | null;
   products: RelatedName | null;
   stones: RelatedName | null;
   sinks: RelatedName | null;
@@ -61,6 +76,32 @@ function formatCurrency(value: number) {
     style: 'currency',
     currency: 'BRL',
   }).format(value);
+}
+
+function formatOptionalCurrency(value: number | null) {
+  return value === null ? 'Não registrado' : formatCurrency(value);
+}
+
+function formatOptionalArea(value: number | null) {
+  return value === null ? 'Não registrada' : `${value.toFixed(2)} m²`;
+}
+
+function formatOptionalMultiplier(value: number | null) {
+  return value === null ? 'Não registrado' : `${value.toFixed(2)}x`;
+}
+
+function formatPricingType(value: string | null) {
+  if (!value) {
+    return 'Não registrado';
+  }
+
+  const labels: Record<string, string> = {
+    fixed: 'Valor fixo',
+    linear_meter: 'Metro linear',
+    percentage: 'Percentual',
+  };
+
+  return labels[value] ?? value;
 }
 
 function formatDate(value: string) {
@@ -130,6 +171,21 @@ export function OrdersPage() {
               'quantity',
               'unit_price',
               'total_price',
+              'calculated_area',
+              'stone_price_snapshot',
+              'sink_price_snapshot',
+              'finish_price_snapshot',
+              'thickness_multiplier',
+              'subtotal_snapshot',
+              'total_snapshot',
+              'product_name_snapshot',
+              'stone_name_snapshot',
+              'sink_name_snapshot',
+              'finish_name_snapshot',
+              'stone_price_per_m2_snapshot',
+              'sink_unit_price_snapshot',
+              'finish_unit_price_snapshot',
+              'finish_pricing_type_snapshot',
               'products(name)',
               'stones(name)',
               'sinks(name)',
@@ -412,19 +468,35 @@ export function OrdersPage() {
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                       <SummaryBox
                         label="Produto"
-                        value={item.products?.name ?? 'Não informado'}
+                        value={
+                          item.product_name_snapshot ??
+                          item.products?.name ??
+                          'Não informado'
+                        }
                       />
                       <SummaryBox
                         label="Pedra"
-                        value={item.stones?.name ?? 'Não informada'}
+                        value={
+                          item.stone_name_snapshot ??
+                          item.stones?.name ??
+                          'Não informada'
+                        }
                       />
                       <SummaryBox
                         label="Cuba"
-                        value={item.sinks?.name ?? 'Não informada'}
+                        value={
+                          item.sink_name_snapshot ??
+                          item.sinks?.name ??
+                          'Não informada'
+                        }
                       />
                       <SummaryBox
                         label="Acabamento"
-                        value={item.finishes?.name ?? 'Não informado'}
+                        value={
+                          item.finish_name_snapshot ??
+                          item.finishes?.name ??
+                          'Não informado'
+                        }
                       />
                       <SummaryBox
                         label="Medidas"
@@ -444,6 +516,118 @@ export function OrdersPage() {
                         label="Valor total"
                         value={formatCurrency(item.total_price)}
                       />
+                    </div>
+
+                    <div className="mt-5 border-t border-stoneLine pt-4">
+                      <h4 className="text-sm font-semibold uppercase text-stone-500">
+                        Snapshot comercial do pedido
+                      </h4>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <SummaryBox
+                          label="Produto snapshot"
+                          value={
+                            item.product_name_snapshot ??
+                            item.products?.name ??
+                            'Não registrado'
+                          }
+                        />
+                        <SummaryBox
+                          label="Pedra snapshot"
+                          value={
+                            item.stone_name_snapshot ??
+                            item.stones?.name ??
+                            'Não registrada'
+                          }
+                        />
+                        <SummaryBox
+                          label="Cuba snapshot"
+                          value={
+                            item.sink_name_snapshot ??
+                            item.sinks?.name ??
+                            'Não registrada'
+                          }
+                        />
+                        <SummaryBox
+                          label="Acabamento snapshot"
+                          value={
+                            item.finish_name_snapshot ??
+                            item.finishes?.name ??
+                            'Não registrado'
+                          }
+                        />
+                        <SummaryBox
+                          label="Preço pedra m²"
+                          value={formatOptionalCurrency(
+                            item.stone_price_per_m2_snapshot,
+                          )}
+                        />
+                        <SummaryBox
+                          label="Preço cuba un."
+                          value={formatOptionalCurrency(
+                            item.sink_unit_price_snapshot,
+                          )}
+                        />
+                        <SummaryBox
+                          label="Preço acabamento"
+                          value={formatOptionalCurrency(
+                            item.finish_unit_price_snapshot,
+                          )}
+                        />
+                        <SummaryBox
+                          label="Tipo acabamento"
+                          value={formatPricingType(
+                            item.finish_pricing_type_snapshot,
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-5 border-t border-stoneLine pt-4">
+                      <h4 className="text-sm font-semibold uppercase text-stone-500">
+                        Breakdown salvo
+                      </h4>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <SummaryBox
+                          label="Área calculada"
+                          value={formatOptionalArea(item.calculated_area)}
+                        />
+                        <SummaryBox
+                          label="Pedra calculada"
+                          value={formatOptionalCurrency(
+                            item.stone_price_snapshot,
+                          )}
+                        />
+                        <SummaryBox
+                          label="Cuba calculada"
+                          value={formatOptionalCurrency(
+                            item.sink_price_snapshot,
+                          )}
+                        />
+                        <SummaryBox
+                          label="Acabamento calculado"
+                          value={formatOptionalCurrency(
+                            item.finish_price_snapshot,
+                          )}
+                        />
+                        <SummaryBox
+                          label="Multiplicador esp."
+                          value={formatOptionalMultiplier(
+                            item.thickness_multiplier,
+                          )}
+                        />
+                        <SummaryBox
+                          label="Subtotal snapshot"
+                          value={formatOptionalCurrency(item.subtotal_snapshot)}
+                        />
+                        <SummaryBox
+                          label="Total snapshot"
+                          value={
+                            item.total_snapshot === null
+                              ? formatCurrency(item.total_price)
+                              : formatCurrency(item.total_snapshot)
+                          }
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}
