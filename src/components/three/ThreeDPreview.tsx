@@ -3,6 +3,7 @@ import { ContactShadows, OrbitControls, RoundedBox, useTexture } from '@react-th
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { ThreeDPreviewProps } from '../../types/threePreview';
+import { resolveLocalStoneTexture } from './stoneTextureMap';
 
 type PreviewErrorBoundaryProps = {
   children: ReactNode;
@@ -99,9 +100,10 @@ function CountertopMaterial({
   stoneImageUrl?: string | null;
 }) {
   const fallbackColor = resolveStoneColor(stoneName);
+  const resolvedTextureUrl = stoneImageUrl ?? resolveLocalStoneTexture(stoneName);
 
-  if (stoneImageUrl) {
-    return <TexturedCountertopMaterial stoneImageUrl={stoneImageUrl} />;
+  if (resolvedTextureUrl) {
+    return <TexturedCountertopMaterial stoneImageUrl={resolvedTextureUrl} />;
   }
 
   return (
@@ -191,6 +193,7 @@ function CountertopScene({
   stoneImageUrl,
   sinkEnabled,
 }: ThreeDPreviewProps) {
+  const resolvedTextureUrl = stoneImageUrl ?? resolveLocalStoneTexture(stoneName);
   const model = useMemo(() => {
     const safeWidth = Math.min(3.6, Math.max(0.8, width || 0.8));
     const safeDepth = Math.min(1.75, Math.max(0.42, depth || 0.42));
@@ -231,7 +234,7 @@ function CountertopScene({
             stoneImageUrl={stoneImageUrl}
           />
         </mesh>
-        {!stoneImageUrl && (
+        {!resolvedTextureUrl && (
           <StoneVeins
             width={model.width}
             depth={model.depth}
