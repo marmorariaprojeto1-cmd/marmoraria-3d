@@ -1,26 +1,43 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { hasSupabaseConfig, supabase } from '../lib/supabase';
 import { calculateQuoteTotal } from '../services/quoteCalculator';
 import type { FinishPricingType } from '../types/quote';
 
-type MockStone = {
+type ProductCatalogItem = {
   id: string;
   name: string;
-  category: string;
-  pricePerM2: number;
-  previewClassName: string;
+  description: string | null;
+  category_id: string | null;
 };
 
-type MockSink = {
+type StoneCatalogItem = {
   id: string;
   name: string;
+  image_url: string | null;
+  price_per_m2: number;
+  category_id: string | null;
+};
+
+type SinkCatalogItem = {
+  id: string;
+  name: string;
+  category: string | null;
   price: number;
 };
 
-type MockFinish = {
+type FinishCatalogItem = {
   id: string;
   name: string;
-  pricingType: FinishPricingType;
+  pricing_type: FinishPricingType;
   price: number;
+};
+
+type SimulatorCatalog = {
+  products: ProductCatalogItem[];
+  stones: StoneCatalogItem[];
+  sinks: SinkCatalogItem[];
+  finishes: FinishCatalogItem[];
 };
 
 type OptionCardProps = {
@@ -49,48 +66,14 @@ const environments = [
   'Comercial',
 ];
 
-const mockProducts = ['Bancada', 'Pia', 'Ilha', 'Nicho', 'Soleira', 'Peitoril'];
+const emptyCatalog: SimulatorCatalog = {
+  products: [],
+  stones: [],
+  sinks: [],
+  finishes: [],
+};
 
-const mockStones: MockStone[] = [
-  {
-    id: 'granito-cinza',
-    name: 'Granito Cinza',
-    category: 'Granito',
-    pricePerM2: 420,
-    previewClassName: 'from-stone-400 via-stone-300 to-stone-500',
-  },
-  {
-    id: 'quartzo-branco',
-    name: 'Quartzo Branco',
-    category: 'Quartzo',
-    pricePerM2: 780,
-    previewClassName: 'from-stone-50 via-white to-stone-200',
-  },
-  {
-    id: 'marmore-claro',
-    name: 'Mármore Claro',
-    category: 'Mármore',
-    pricePerM2: 650,
-    previewClassName: 'from-amber-50 via-stone-100 to-white',
-  },
-];
-
-const mockSinks: MockSink[] = [
-  { id: 'sem-cuba', name: 'Sem cuba', price: 0 },
-  { id: 'cuba-simples', name: 'Cuba simples', price: 280 },
-  { id: 'cuba-dupla', name: 'Cuba dupla', price: 520 },
-];
-
-const mockFinishes: MockFinish[] = [
-  { id: 'reto', name: 'Reto', pricingType: 'fixed', price: 0 },
-  { id: 'boleado', name: 'Boleado', pricingType: 'fixed', price: 180 },
-  {
-    id: 'meia-esquadria',
-    name: 'Meia esquadria',
-    pricingType: 'fixed',
-    price: 320,
-  },
-];
+const simulatorCompanyId = import.meta.env.VITE_SIMULATOR_COMPANY_ID;
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('pt-BR', {
@@ -126,23 +109,134 @@ function OptionCard({ title, description, selected, onClick }: OptionCardProps) 
   );
 }
 
+async function fetchSimulatorCatalog(companyId: string): Promise<SimulatorCatalog> {
+  const [products, stones, sinks, finishes] = await Promise.all([
+    supabase
+      .from('products')
+      .select('id, name, description, category_id')
+      .eq('company_id', companyId)
+      .eq('active', true)
+      .order('name', { ascending: true }),
+    supabase
+      .from('stones')
+      .select('id, name, image_url, price_per_m2, category_id')
+      .eq('company_id', companyId)
+      .eq('active', true)
+      .order('name', { ascending: true }),
+    supabase
+      .from('sinks')
+      .select('id, name, category, price')
+      .eq('company_id', companyId)
+      .eq('active', true)
+      .order('name', { ascending: true }),
+    supabase
+      .from('finishes')
+      .select('id, name, pricing_type, price')
+      .eq('company_id', companyId)
+      .eq('active', true)
+      .order('name', { ascending: true }),
+  ]);
+
+  const error =
+    products.error ?? stones.error ?? sinks.error ?? finishes.error ?? null;
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    products: (products.data ?? []) as ProductCatalogItem[],
+    stones: (stones.data ?? []) as StoneCatalogItem[],
+    sinks: (sinks.data ?? []) as SinkCatalogItem[],
+    finishes: (finishes.data ?? []) as FinishCatalogItem[],
+  };
+}
+
+function getStonePreviewClass(stoneId?: string) {
+  const variants = [
+    'from-stone-400 via-stone-300 to-stone-500',
+    'from-stone-50 via-white to-stone-200',
+    'from-amber-50 via-stone-100 to-white',
+    'from-slate-300 via-stone-200 to-zinc-500',
+  ];
+
+  if (!stoneId) {
+    return variants[0];
+  }
+
+  const index = stoneId
+    .split('')
+    .reduce((total, char) => total + char.charCodeAt(0), 0);
+
+  return variants[index % variants.length];
+}
+
+function formatFinishPricingType(value: FinishPricingType) {
+  if (value === 'linear_meter') {
+    return 'por metro linear';
+  }
+
+  if (value === 'percentage') {
+    return 'percentual';
+  }
+
+  return 'valor fixo';
+}
+
 export function SimulatorPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [environment, setEnvironment] = useState(environments[0]);
-  const [product, setProduct] = useState(mockProducts[0]);
-  const [stoneId, setStoneId] = useState(mockStones[0].id);
-  const [sinkId, setSinkId] = useState(mockSinks[0].id);
-  const [finishId, setFinishId] = useState(mockFinishes[0].id);
+  const [productId, setProductId] = useState('');
+  const [stoneId, setStoneId] = useState('');
+  const [sinkId, setSinkId] = useState('');
+  const [finishId, setFinishId] = useState('');
   const [width, setWidth] = useState('2.00');
   const [depth, setDepth] = useState('0.60');
   const [quantity, setQuantity] = useState('1');
 
+  const canFetchCatalog = Boolean(hasSupabaseConfig && simulatorCompanyId);
+
+  const {
+    data: catalog = emptyCatalog,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ['simulator-catalog', simulatorCompanyId],
+    queryFn: () => fetchSimulatorCatalog(simulatorCompanyId),
+    enabled: canFetchCatalog,
+  });
+
+  useEffect(() => {
+    if (!productId && catalog.products[0]) {
+      setProductId(catalog.products[0].id);
+    }
+  }, [catalog.products, productId]);
+
+  useEffect(() => {
+    if (!stoneId && catalog.stones[0]) {
+      setStoneId(catalog.stones[0].id);
+    }
+  }, [catalog.stones, stoneId]);
+
+  useEffect(() => {
+    if (!sinkId && catalog.sinks[0]) {
+      setSinkId(catalog.sinks[0].id);
+    }
+  }, [catalog.sinks, sinkId]);
+
+  useEffect(() => {
+    if (!finishId && catalog.finishes[0]) {
+      setFinishId(catalog.finishes[0].id);
+    }
+  }, [catalog.finishes, finishId]);
+
+  const selectedProduct =
+    catalog.products.find((product) => product.id === productId) ?? null;
   const selectedStone =
-    mockStones.find((stone) => stone.id === stoneId) ?? mockStones[0];
-  const selectedSink =
-    mockSinks.find((sink) => sink.id === sinkId) ?? mockSinks[0];
+    catalog.stones.find((stone) => stone.id === stoneId) ?? null;
+  const selectedSink = catalog.sinks.find((sink) => sink.id === sinkId) ?? null;
   const selectedFinish =
-    mockFinishes.find((finish) => finish.id === finishId) ?? mockFinishes[0];
+    catalog.finishes.find((finish) => finish.id === finishId) ?? null;
 
   const dimensions = useMemo(
     () => ({
@@ -155,29 +249,40 @@ export function SimulatorPage() {
 
   const quote = useMemo(
     () =>
-      calculateQuoteTotal({
-        stone: {
-          dimensions,
-          pricePerM2: selectedStone.pricePerM2,
-          quantity: resolvedQuantity,
-        },
-        sink: {
-          price: selectedSink.price,
-          quantity: resolvedQuantity,
-        },
-        finish: {
-          pricingType: selectedFinish.pricingType,
-          price: selectedFinish.price,
-          quantity: resolvedQuantity,
-        },
-      }),
+      selectedStone
+        ? calculateQuoteTotal({
+            stone: {
+              dimensions,
+              pricePerM2: selectedStone.price_per_m2,
+              quantity: resolvedQuantity,
+            },
+            sink: selectedSink
+              ? {
+                  price: selectedSink.price,
+                  quantity: resolvedQuantity,
+                }
+              : null,
+            finish: selectedFinish
+              ? {
+                  pricingType: selectedFinish.pricing_type,
+                  price: selectedFinish.price,
+                  quantity: resolvedQuantity,
+                }
+              : null,
+          })
+        : {
+            area: 0,
+            stonePrice: 0,
+            sinkPrice: 0,
+            finishPrice: 0,
+            total: 0,
+          },
     [
       dimensions,
       resolvedQuantity,
-      selectedFinish.price,
-      selectedFinish.pricingType,
-      selectedSink.price,
-      selectedStone.pricePerM2,
+      selectedFinish,
+      selectedSink,
+      selectedStone,
     ],
   );
 
@@ -201,11 +306,25 @@ export function SimulatorPage() {
           Simulador 2D inicial
         </h1>
         <p className="mt-3 max-w-3xl text-stone-700">
-          Configure uma peça em etapas com dados mockados locais e veja o
-          orçamento estimado em tempo real. Esta versão não salva orçamento, não
-          usa Supabase e não possui 3D.
+          Configure uma peça em etapas usando o catálogo ativo da marmoraria e
+          veja o orçamento estimado em tempo real. Esta versão não salva
+          orçamento, não usa WhatsApp e não possui 3D.
         </p>
       </div>
+
+      {!canFetchCatalog && (
+        <div className="rounded-md border border-copper/30 bg-orange-50 p-4 text-sm text-stone-800">
+          Configure VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY e
+          VITE_SIMULATOR_COMPANY_ID para carregar o catálogo real do simulador.
+        </div>
+      )}
+
+      {isError && (
+        <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
+          Não foi possível carregar o catálogo ativo da empresa. Verifique o
+          company_id, as permissões e as policies públicas necessárias.
+        </div>
+      )}
 
       <div className="rounded-lg border border-stoneLine bg-white p-4 shadow-sm">
         <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
@@ -233,7 +352,11 @@ export function SimulatorPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
           <div className="rounded-lg border border-stoneLine bg-white p-5 shadow-sm">
-            {currentStep === 0 && (
+            {isLoading && (
+              <p className="text-stone-700">Carregando catálogo ativo...</p>
+            )}
+
+            {!isLoading && currentStep === 0 && (
               <div className="space-y-4">
                 <div>
                   <h2 className="text-xl font-semibold text-graphite">
@@ -256,56 +379,63 @@ export function SimulatorPage() {
               </div>
             )}
 
-            {currentStep === 1 && (
+            {!isLoading && currentStep === 1 && (
               <div className="space-y-4">
                 <div>
                   <h2 className="text-xl font-semibold text-graphite">
                     Etapa 2 - Escolher produto
                   </h2>
                   <p className="mt-1 text-sm text-stone-600">
-                    Produtos mockados para o ambiente {environment}.
+                    Produtos ativos da empresa para o ambiente {environment}.
                   </p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {mockProducts.map((item) => (
-                    <OptionCard
-                      key={item}
-                      title={item}
-                      selected={product === item}
-                      onClick={() => setProduct(item)}
-                    />
-                  ))}
-                </div>
+                {catalog.products.length === 0 ? (
+                  <EmptyCatalogMessage label="produtos" />
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {catalog.products.map((item) => (
+                      <OptionCard
+                        key={item.id}
+                        title={item.name}
+                        description={item.description ?? undefined}
+                        selected={productId === item.id}
+                        onClick={() => setProductId(item.id)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
-            {currentStep === 2 && (
+            {!isLoading && currentStep === 2 && (
               <div className="space-y-4">
                 <div>
                   <h2 className="text-xl font-semibold text-graphite">
                     Etapa 3 - Escolher pedra
                   </h2>
                   <p className="mt-1 text-sm text-stone-600">
-                    Valores locais apenas para validar o motor de orçamento.
+                    Pedras ativas da empresa filtradas por company_id.
                   </p>
                 </div>
-                <div className="grid gap-3 xl:grid-cols-3">
-                  {mockStones.map((stone) => (
-                    <OptionCard
-                      key={stone.id}
-                      title={stone.name}
-                      description={`${stone.category} · ${formatCurrency(
-                        stone.pricePerM2,
-                      )}/m²`}
-                      selected={stoneId === stone.id}
-                      onClick={() => setStoneId(stone.id)}
-                    />
-                  ))}
-                </div>
+                {catalog.stones.length === 0 ? (
+                  <EmptyCatalogMessage label="pedras" />
+                ) : (
+                  <div className="grid gap-3 xl:grid-cols-3">
+                    {catalog.stones.map((stone) => (
+                      <OptionCard
+                        key={stone.id}
+                        title={stone.name}
+                        description={`${formatCurrency(stone.price_per_m2)}/m²`}
+                        selected={stoneId === stone.id}
+                        onClick={() => setStoneId(stone.id)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
-            {currentStep === 3 && (
+            {!isLoading && currentStep === 3 && (
               <div className="space-y-4">
                 <div>
                   <h2 className="text-xl font-semibold text-graphite">
@@ -361,14 +491,14 @@ export function SimulatorPage() {
               </div>
             )}
 
-            {currentStep === 4 && (
+            {!isLoading && currentStep === 4 && (
               <div className="space-y-5">
                 <div>
                   <h2 className="text-xl font-semibold text-graphite">
                     Etapa 5 - Cuba e acabamento
                   </h2>
                   <p className="mt-1 text-sm text-stone-600">
-                    Escolha os opcionais que entram no orçamento.
+                    Escolha os opcionais ativos da empresa.
                   </p>
                 </div>
 
@@ -376,39 +506,51 @@ export function SimulatorPage() {
                   <h3 className="text-sm font-semibold uppercase text-stone-600">
                     Cuba
                   </h3>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {mockSinks.map((sink) => (
-                      <OptionCard
-                        key={sink.id}
-                        title={sink.name}
-                        description={formatCurrency(sink.price)}
-                        selected={sinkId === sink.id}
-                        onClick={() => setSinkId(sink.id)}
-                      />
-                    ))}
-                  </div>
+                  {catalog.sinks.length === 0 ? (
+                    <EmptyCatalogMessage label="cubas" />
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {catalog.sinks.map((sink) => (
+                        <OptionCard
+                          key={sink.id}
+                          title={sink.name}
+                          description={`${sink.category ?? 'sem categoria'} · ${formatCurrency(
+                            sink.price,
+                          )}`}
+                          selected={sinkId === sink.id}
+                          onClick={() => setSinkId(sink.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-3">
                   <h3 className="text-sm font-semibold uppercase text-stone-600">
                     Acabamento
                   </h3>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {mockFinishes.map((finish) => (
-                      <OptionCard
-                        key={finish.id}
-                        title={finish.name}
-                        description={formatCurrency(finish.price)}
-                        selected={finishId === finish.id}
-                        onClick={() => setFinishId(finish.id)}
-                      />
-                    ))}
-                  </div>
+                  {catalog.finishes.length === 0 ? (
+                    <EmptyCatalogMessage label="acabamentos" />
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {catalog.finishes.map((finish) => (
+                        <OptionCard
+                          key={finish.id}
+                          title={finish.name}
+                          description={`${formatFinishPricingType(
+                            finish.pricing_type,
+                          )} · ${formatCurrency(finish.price)}`}
+                          selected={finishId === finish.id}
+                          onClick={() => setFinishId(finish.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            {currentStep === 5 && (
+            {!isLoading && currentStep === 5 && (
               <div className="space-y-4">
                 <div>
                   <h2 className="text-xl font-semibold text-graphite">
@@ -421,12 +563,21 @@ export function SimulatorPage() {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <SummaryItem label="Ambiente" value={environment} />
-                  <SummaryItem label="Produto" value={product} />
-                  <SummaryItem label="Pedra" value={selectedStone.name} />
-                  <SummaryItem label="Cuba" value={selectedSink.name} />
+                  <SummaryItem
+                    label="Produto"
+                    value={selectedProduct?.name ?? 'Não selecionado'}
+                  />
+                  <SummaryItem
+                    label="Pedra"
+                    value={selectedStone?.name ?? 'Não selecionada'}
+                  />
+                  <SummaryItem
+                    label="Cuba"
+                    value={selectedSink?.name ?? 'Não selecionada'}
+                  />
                   <SummaryItem
                     label="Acabamento"
-                    value={selectedFinish.name}
+                    value={selectedFinish?.name ?? 'Não selecionado'}
                   />
                   <SummaryItem
                     label="Medidas"
@@ -469,7 +620,7 @@ export function SimulatorPage() {
                   Preview visual 2D
                 </h2>
                 <p className="mt-1 text-sm text-stone-600">
-                  {selectedStone.name} · {selectedStone.category}
+                  {selectedStone?.name ?? 'Pedra não selecionada'}
                 </p>
               </div>
               <span className="w-fit rounded-full bg-stone-100 px-3 py-1 text-sm font-medium text-stone-700">
@@ -480,16 +631,21 @@ export function SimulatorPage() {
             <div className="mt-6 flex min-h-56 items-center justify-center rounded-lg bg-stone-100 p-6">
               <div
                 className={[
-                  'relative rounded-md border border-stone-400 bg-gradient-to-br shadow-lg',
-                  selectedStone.previewClassName,
+                  'relative rounded-md border border-stone-400 bg-gradient-to-br bg-cover bg-center shadow-lg',
+                  selectedStone?.image_url
+                    ? ''
+                    : getStonePreviewClass(selectedStone?.id),
                 ].join(' ')}
                 style={{
                   width: `${previewWidth}%`,
                   height: `${previewHeight}%`,
                   minHeight: '96px',
+                  backgroundImage: selectedStone?.image_url
+                    ? `url(${selectedStone.image_url})`
+                    : undefined,
                 }}
               >
-                {selectedSink.price > 0 && (
+                {selectedSink && (
                   <div className="absolute left-1/2 top-1/2 h-12 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-stone-500 bg-white/70 shadow-inner" />
                 )}
               </div>
@@ -523,6 +679,14 @@ export function SimulatorPage() {
         </aside>
       </div>
     </section>
+  );
+}
+
+function EmptyCatalogMessage({ label }: { label: string }) {
+  return (
+    <div className="rounded-md border border-stoneLine bg-stone-50 p-4 text-sm text-stone-700">
+      Nenhum registro ativo de {label} foi encontrado para a empresa configurada.
+    </div>
   );
 }
 
