@@ -4,6 +4,7 @@ import { ProtectedAdminPage } from './pages/AdminPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { FinishesPage } from './pages/admin/FinishesPage';
 import { AdminPlaceholderPage } from './pages/admin/AdminPlaceholderPage';
+import { OrdersPage } from './pages/admin/OrdersPage';
 import { ProductsPage } from './pages/admin/ProductsPage';
 import { SinksPage } from './pages/admin/SinksPage';
 import { StonesPage } from './pages/admin/StonesPage';
@@ -38,13 +39,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'pedidos',
-            element: (
-              <AdminPlaceholderPage
-                eyebrow="Pedidos"
-                title="Pedidos recebidos"
-                description="Lista futura de pedidos e oportunidades enviadas pelos clientes."
-              />
-            ),
+            element: <OrdersPage />,
           },
           {
             path: 'pedras',
