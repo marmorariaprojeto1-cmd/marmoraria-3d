@@ -233,6 +233,62 @@ function StoneVeins({
   );
 }
 
+function SinkMesh({
+  radius,
+}: {
+  radius: number;
+}) {
+  return (
+    <group scale={[1.38, 1, 0.84]}>
+      <mesh receiveShadow position={[0, -0.007, 0]}>
+        <cylinderGeometry args={[radius * 1.06, radius * 1.02, 0.012, 72]} />
+        <meshStandardMaterial color="#151a1c" roughness={0.9} />
+      </mesh>
+      <mesh castShadow receiveShadow position={[0, 0.016, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[radius * 1.02, 0.018, 14, 72]} />
+        <meshStandardMaterial
+          color="#c6c9c8"
+          roughness={0.22}
+          metalness={0.72}
+        />
+      </mesh>
+      <mesh receiveShadow position={[0, -0.062, 0]}>
+        <cylinderGeometry
+          args={[radius * 0.86, radius * 0.66, 0.11, 72, 1, true]}
+        />
+        <meshStandardMaterial
+          color="#8d9494"
+          roughness={0.34}
+          metalness={0.68}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      <mesh receiveShadow position={[0, -0.121, 0]}>
+        <cylinderGeometry args={[radius * 0.67, radius * 0.64, 0.018, 72]} />
+        <meshStandardMaterial color="#2b3335" roughness={0.82} metalness={0.15} />
+      </mesh>
+      <mesh position={[0, -0.05, radius * 0.12]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[radius * 1.3, radius * 0.75]} />
+        <meshBasicMaterial
+          color="#050708"
+          transparent
+          opacity={0.18}
+          depthWrite={false}
+        />
+      </mesh>
+      <mesh position={[-radius * 0.26, 0.034, -radius * 0.36]} rotation={[-Math.PI / 2, 0, -0.18]}>
+        <planeGeometry args={[radius * 0.82, radius * 0.08]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.28}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
+  );
+}
+
 function CountertopScene({
   width,
   depth,
@@ -359,37 +415,12 @@ function CountertopScene({
         {sinkEnabled && (
           <group
             position={[
-              model.width * 0.18,
+              model.width * 0.22,
               model.thickness / 2 + 0.006,
-              -model.depth * 0.02,
+              model.depth * 0.08,
             ]}
-            scale={[1.32, 1, 0.82]}
           >
-            <mesh receiveShadow position={[0, -0.012, 0]}>
-              <cylinderGeometry
-                args={[
-                  model.sinkRadius,
-                  model.sinkRadius * 0.86,
-                  0.05,
-                  64,
-                ]}
-              />
-              <meshStandardMaterial color="#242b2d" roughness={0.88} />
-            </mesh>
-            <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-              <ringGeometry
-                args={[
-                  model.sinkRadius * 0.92,
-                  model.sinkRadius * 1.04,
-                  64,
-                ]}
-              />
-              <meshStandardMaterial
-                color="#c7c0b4"
-                roughness={0.34}
-                metalness={0.18}
-              />
-            </mesh>
+            <SinkMesh radius={model.sinkRadius} />
           </group>
         )}
       </group>
