@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed:default-catalog": "node scripts/seed-default-catalog.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",
