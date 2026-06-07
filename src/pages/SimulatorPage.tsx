@@ -40,6 +40,12 @@ type SimulatorCatalog = {
   finishes: FinishCatalogItem[];
 };
 
+type SimulatorCompany = {
+  id: string;
+  name: string;
+  whatsapp: string | null;
+};
+
 type SaveQuoteInput = {
   companyId: string;
   customer: {
@@ -215,6 +221,21 @@ async function saveCompletedQuote(input: SaveQuoteInput) {
   return quote.id as string;
 }
 
+async function fetchSimulatorCompany(companyId: string): Promise<SimulatorCompany> {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('id, name, whatsapp')
+    .eq('id', companyId)
+    .eq('active', true)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as SimulatorCompany;
+}
+
 function getStonePreviewClass(stoneId?: string) {
   const variants = [
     'from-stone-400 via-stone-300 to-stone-500',
@@ -246,6 +267,10 @@ function formatFinishPricingType(value: FinishPricingType) {
   return 'valor fixo';
 }
 
+function normalizeWhatsAppNumber(value?: string | null) {
+  return value?.replace(/\D/g, '') ?? '';
+}
+
 export function SimulatorPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [environment, setEnvironment] = useState(environments[0]);
@@ -272,6 +297,15 @@ export function SimulatorPage() {
   } = useQuery({
     queryKey: ['simulator-catalog', simulatorCompanyId],
     queryFn: () => fetchSimulatorCatalog(simulatorCompanyId),
+    enabled: canFetchCatalog,
+  });
+
+  const {
+    data: company,
+    isError: isCompanyError,
+  } = useQuery({
+    queryKey: ['simulator-company', simulatorCompanyId],
+    queryFn: () => fetchSimulatorCompany(simulatorCompanyId),
     enabled: canFetchCatalog,
   });
 
@@ -360,6 +394,7 @@ export function SimulatorPage() {
   const previewHeight = Math.min(70, Math.max(22, dimensions.depth * 70));
   const isLastStep = currentStep === simulatorSteps.length - 1;
   const unitPrice = quote.total / resolvedQuantity;
+  const companyWhatsAppNumber = normalizeWhatsAppNumber(company?.whatsapp);
   const canSaveQuote = Boolean(
     canFetchCatalog &&
       selectedProduct &&
@@ -371,6 +406,16 @@ export function SimulatorPage() {
       quote.total > 0 &&
       customerName.trim() &&
       customerPhone.trim(),
+  );
+  const canRequestByWhatsApp = Boolean(
+    companyWhatsAppNumber &&
+      selectedProduct &&
+      selectedStone &&
+      dimensions.width > 0 &&
+      dimensions.depth > 0 &&
+      resolvedThickness > 0 &&
+      resolvedQuantity > 0 &&
+      quote.total > 0,
   );
 
   const saveQuoteMutation = useMutation({
@@ -419,6 +464,35 @@ export function SimulatorPage() {
     saveQuoteMutation.mutate();
   }
 
+  function buildWhatsAppMessage() {
+    return [
+      'Olá! Gostaria de solicitar um orçamento.',
+      '',
+      `Ambiente: ${environment}`,
+      `Produto: ${selectedProduct?.name ?? 'Não selecionado'}`,
+      `Pedra: ${selectedStone?.name ?? 'Não selecionada'}`,
+      `Cuba: ${selectedSink?.name ?? 'Não selecionada'}`,
+      `Acabamento: ${selectedFinish?.name ?? 'Não selecionado'}`,
+      `Medidas: ${dimensions.width.toFixed(2)}m x ${dimensions.depth.toFixed(
+        2,
+      )}m · esp. ${resolvedThickness.toFixed(1)}cm`,
+      `Quantidade: ${resolvedQuantity}`,
+      `Valor estimado: ${formatCurrency(quote.total)}`,
+    ].join('\n');
+  }
+
+  function handleWhatsAppRequest() {
+    if (!canRequestByWhatsApp) {
+      return;
+    }
+
+    const url = `https://wa.me/${companyWhatsAppNumber}?text=${encodeURIComponent(
+      buildWhatsAppMessage(),
+    )}`;
+
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
   return (
     <section className="space-y-8">
       <div>
@@ -444,6 +518,12 @@ export function SimulatorPage() {
         <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
           Não foi possível carregar o catálogo ativo da empresa. Verifique o
           company_id, as permissões e as policies públicas necessárias.
+        </div>
+      )}
+
+      {isCompanyError && (
+        <div className="rounded-md bg-red-50 p-4 text-sm text-red-700">
+          Não foi possível carregar o WhatsApp da empresa ativa configurada.
         </div>
       )}
 
@@ -801,6 +881,30 @@ export function SimulatorPage() {
                     <p className="mt-3 text-sm text-stone-600">
                       Preencha nome, telefone, produto, pedra e medidas válidas
                       para salvar.
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded-lg border border-stoneLine bg-white p-4">
+                  <h3 className="text-sm font-semibold uppercase text-stone-600">
+                    Envio pelo WhatsApp
+                  </h3>
+                  <p className="mt-2 text-sm text-stone-600">
+                    A mensagem será enviada para o WhatsApp cadastrado da
+                    empresa {company?.name ?? 'configurada'}.
+                  </p>
+                  <button
+                    className="mt-4 rounded-md bg-green-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-stone-400"
+                    type="button"
+                    onClick={handleWhatsAppRequest}
+                    disabled={!canRequestByWhatsApp}
+                  >
+                    Solicitar orçamento pelo WhatsApp
+                  </button>
+                  {!companyWhatsAppNumber && (
+                    <p className="mt-3 text-sm text-stone-600">
+                      Cadastre um WhatsApp ativo para a empresa antes de usar
+                      este envio.
                     </p>
                   )}
                 </div>
