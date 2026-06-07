@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { ThreeDPreview } from '../components/three/ThreeDPreview';
 import { hasSupabaseConfig, supabase } from '../lib/supabase';
 import { calculateQuoteTotal, roundMoney } from '../services/quoteCalculator';
 import type { FinishPricingType } from '../types/quote';
@@ -507,12 +508,12 @@ export function SimulatorPage() {
         <div className="bg-stone-50 px-5 py-6 sm:px-6">
           <p className="page-kicker">Simulador</p>
           <h1 className="page-title">
-          Simulador 2D inicial
+          Simulador visual inicial
           </h1>
           <p className="page-description">
             Configure uma peça em etapas usando o catálogo ativo da marmoraria,
             veja o orçamento estimado em tempo real e salve a solicitação no
-            Supabase. Esta versão ainda não possui visualização 3D.
+            Supabase. Esta versão combina preview 2D com visualização 3D simples.
           </p>
         </div>
       </div>
@@ -991,6 +992,15 @@ export function SimulatorPage() {
               </div>
             </div>
           </div>
+
+          <ThreeDPreview
+            width={dimensions.width}
+            depth={dimensions.depth}
+            thickness={resolvedThickness}
+            stoneName={selectedStone?.name ?? 'Pedra não selecionada'}
+            stoneImageUrl={selectedStone?.image_url}
+            sinkEnabled={Boolean(selectedSink)}
+          />
 
           <div className="surface-card p-5">
             <h2 className="text-lg font-semibold text-graphite">
