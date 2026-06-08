@@ -2,6 +2,10 @@ import React, { Component, Suspense, useMemo, useRef, type ReactNode } from 'rea
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { ThreeDPreviewProps } from '../../types/threePreview';
+import {
+  normalizeComposition,
+  type NormalizedThreeDPreviewProps,
+} from './composition/normalizeComposition';
 import { Backsplash } from './parts/Backsplash';
 import { EdgeFinish } from './parts/EdgeFinish';
 import { FrontApron } from './parts/FrontApron';
@@ -18,26 +22,6 @@ import {
   resolveUsableTextureUrl,
   useSafeTexture,
 } from './utils/stoneMaterials';
-
-type NormalizedThreeDPreviewProps = {
-  width: number;
-  depth: number;
-  thickness: number;
-  stoneName: string;
-  stoneImageUrl?: string | null;
-  sinkEnabled?: boolean;
-  backsplashEnabled: boolean;
-  backsplashHeightCm: number;
-  leftBacksplashEnabled: boolean;
-  rightBacksplashEnabled: boolean;
-  frontApronEnabled: boolean;
-  frontApronHeightCm: number;
-  edgeFinishType: NonNullable<ThreeDPreviewProps['edgeFinishType']>;
-  wetAreaEnabled: boolean;
-  wetAreaWidth?: number;
-  wetAreaDepth?: number;
-  wetAreaPosition?: ThreeDPreviewProps['wetAreaPosition'];
-};
 
 type PreviewErrorBoundaryProps = { children: ReactNode };
 type PreviewErrorBoundaryState = { hasError: boolean };
@@ -80,52 +64,6 @@ function AutoRotate({ targetRef }: { targetRef: React.RefObject<THREE.Group | nu
   });
 
   return null;
-}
-
-function normalizePreviewProps(props: ThreeDPreviewProps): NormalizedThreeDPreviewProps {
-  if (props.composition) {
-    const { composition } = props;
-
-    return {
-      width: composition.top.width,
-      depth: composition.top.depth,
-      thickness: composition.top.thicknessMm / 10,
-      stoneName: composition.material.stoneName,
-      stoneImageUrl: composition.material.stoneImageUrl ?? props.stoneImageUrl,
-      sinkEnabled: props.sinkEnabled,
-      backsplashEnabled: composition.backsplash?.enabled ?? false,
-      backsplashHeightCm: (composition.backsplash?.heightMm ?? 0) / 10,
-      leftBacksplashEnabled: composition.backsplash?.leftEnabled ?? false,
-      rightBacksplashEnabled: composition.backsplash?.rightEnabled ?? false,
-      frontApronEnabled: composition.frontApron?.enabled ?? false,
-      frontApronHeightCm: (composition.frontApron?.heightMm ?? 0) / 10,
-      edgeFinishType: composition.edgeFinish?.type ?? 'straight',
-      wetAreaEnabled: composition.wetArea?.enabled ?? false,
-      wetAreaWidth: composition.wetArea?.width,
-      wetAreaDepth: composition.wetArea?.depth,
-      wetAreaPosition: composition.wetArea?.position,
-    };
-  }
-
-  return {
-    width: props.width ?? 0.8,
-    depth: props.depth ?? 0.42,
-    thickness: props.thickness ?? 3,
-    stoneName: props.stoneName ?? 'Pedra não selecionada',
-    stoneImageUrl: props.stoneImageUrl,
-    sinkEnabled: props.sinkEnabled,
-    backsplashEnabled: props.backsplashEnabled ?? true,
-    backsplashHeightCm: props.backsplashHeightCm ?? 8,
-    leftBacksplashEnabled: props.leftBacksplashEnabled ?? false,
-    rightBacksplashEnabled: props.rightBacksplashEnabled ?? false,
-    frontApronEnabled: props.frontApronEnabled ?? true,
-    frontApronHeightCm: props.frontApronHeightCm ?? 12,
-    edgeFinishType: props.edgeFinishType ?? 'rounded',
-    wetAreaEnabled: props.wetAreaEnabled ?? true,
-    wetAreaWidth: props.wetAreaWidth,
-    wetAreaDepth: props.wetAreaDepth,
-    wetAreaPosition: props.wetAreaPosition,
-  };
 }
 
 function CountertopScene({
@@ -304,7 +242,7 @@ function PreviewFallback() {
 
 export function ThreeDPreview(props: ThreeDPreviewProps) {
   const webGLSupported = useMemo(() => hasWebGLSupport(), []);
-  const previewProps = useMemo(() => normalizePreviewProps(props), [props]);
+  const previewProps = useMemo(() => normalizeComposition(props), [props]);
 
   if (!webGLSupported) return <PreviewFallback />;
 
