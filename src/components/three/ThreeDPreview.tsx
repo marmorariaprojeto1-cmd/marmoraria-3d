@@ -1,29 +1,23 @@
-import React, {
-  Component,
-  Suspense,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
-import {
-  ContactShadows,
-  OrbitControls,
-  RoundedBox,
-  Preload,
-} from '@react-three/drei';
+import React, { Component, Suspense, useMemo, useRef, type ReactNode } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { ThreeDPreviewProps } from '../../types/threePreview';
+import { Backsplash } from './parts/Backsplash';
+import { EdgeFinish } from './parts/EdgeFinish';
+import { FrontApron } from './parts/FrontApron';
+import { SceneCamera } from './parts/SceneCamera';
+import { SceneLighting } from './parts/SceneLighting';
+import { SideBacksplash } from './parts/SideBacksplash';
+import { StoneTop } from './parts/StoneTop';
+import { WetArea } from './parts/WetArea';
 import {
-  isSupportedStoneTexturePath,
-  resolveLocalStoneTexture,
-} from './stoneTextureMap';
-
-// ---------------------------------------------------------------------------
-// Error boundary
-// ---------------------------------------------------------------------------
+  buildCountertopModel,
+  resolveEdgeFinishVisualType,
+} from './utils/geometryUtils';
+import {
+  resolveUsableTextureUrl,
+  useSafeTexture,
+} from './utils/stoneMaterials';
 
 type PreviewErrorBoundaryProps = { children: ReactNode };
 type PreviewErrorBoundaryState = { hasError: boolean };
@@ -33,18 +27,16 @@ class PreviewErrorBoundary extends Component<
   PreviewErrorBoundaryState
 > {
   state: PreviewErrorBoundaryState = { hasError: false };
+
   static getDerivedStateFromError() {
     return { hasError: true };
   }
+
   render() {
     if (this.state.hasError) return <PreviewFallback />;
     return this.props.children;
   }
 }
-
-// ---------------------------------------------------------------------------
-// WebGL check
-// ---------------------------------------------------------------------------
 
 function hasWebGLSupport() {
   try {
@@ -58,550 +50,17 @@ function hasWebGLSupport() {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Stone color / material helpers
-// ---------------------------------------------------------------------------
-
-interface StoneProfile {
-  base: string;
-  vein: string;
-  roughness: number;
-  metalness: number;
-  clearcoat: number;
-  clearcoatRoughness: number;
-  reflectivity: number;
-  sheen?: number;
-  sheenColor?: string;
-}
-
-function resolveStoneProfile(stoneName: string): StoneProfile {
-  const n = stoneName.toLowerCase();
-
-  if (n.includes('preto') || n.includes('nero')) {
-    return {
-      base: '#1c1e1f',
-      vein: '#4a5052',
-      roughness: 0.28,
-      metalness: 0.04,
-      clearcoat: 0.85,
-      clearcoatRoughness: 0.12,
-      reflectivity: 0.72,
-    };
-  }
-  if (n.includes('verde')) {
-    return {
-      base: '#243428',
-      vein: '#3e5842',
-      roughness: 0.32,
-      metalness: 0.06,
-      clearcoat: 0.78,
-      clearcoatRoughness: 0.15,
-      reflectivity: 0.62,
-      sheen: 0.3,
-      sheenColor: '#6a8a5c',
-    };
-  }
-  if (n.includes('amarelo') || n.includes('ornamental')) {
-    return {
-      base: '#c5a05a',
-      vein: '#7a5e32',
-      roughness: 0.35,
-      metalness: 0.02,
-      clearcoat: 0.72,
-      clearcoatRoughness: 0.18,
-      reflectivity: 0.58,
-    };
-  }
-  if (n.includes('cinza')) {
-    return {
-      base: '#8a8d87',
-      vein: '#5a5e5a',
-      roughness: 0.30,
-      metalness: 0.03,
-      clearcoat: 0.80,
-      clearcoatRoughness: 0.14,
-      reflectivity: 0.66,
-    };
-  }
-  if (n.includes('travertino') || n.includes('crema')) {
-    return {
-      base: '#c4ae88',
-      vein: '#8e7452',
-      roughness: 0.40,
-      metalness: 0.01,
-      clearcoat: 0.60,
-      clearcoatRoughness: 0.22,
-      reflectivity: 0.48,
-    };
-  }
-  // branco / calacatta / siena / fortaleza
-  return {
-    base: '#ddd6c8',
-    vein: '#a89880',
-    roughness: 0.26,
-    metalness: 0.02,
-    clearcoat: 0.88,
-    clearcoatRoughness: 0.10,
-    reflectivity: 0.78,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Texture loader hook
-// ---------------------------------------------------------------------------
-
-function resolveUsableTextureUrl(stoneName: string, stoneImageUrl?: string | null) {
-  if (stoneImageUrl && isSupportedStoneTexturePath(stoneImageUrl)) {
-    return stoneImageUrl;
-  }
-
-  const localTextureUrl = resolveLocalStoneTexture(stoneName);
-  if (localTextureUrl && isSupportedStoneTexturePath(localTextureUrl)) {
-    return localTextureUrl;
-  }
-
-  return null;
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function isPowerOfTwo(value: number) {
-  return value > 0 && (value & (value - 1)) === 0;
-}
-
-function createPowerOfTwoTexture(source: THREE.Texture) {
-  const image = source.image as HTMLImageElement | ImageBitmap | undefined;
-  if (!image?.width || !image?.height || (isPowerOfTwo(image.width) && isPowerOfTwo(image.height))) {
-    return source;
-  }
-
-  const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 1024;
-
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return source;
-
-  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.name = `${source.name || 'stone-texture'}-pot`;
-  source.dispose();
-  return texture;
-}
-
-function configureTexture(t: THREE.Texture, repeatX = 2.2, repeatY = 1.3) {
-  const image = t.image as HTMLImageElement | ImageBitmap | undefined;
-  const width = image?.width ?? 0;
-  const height = image?.height ?? 0;
-  const canRepeat = isPowerOfTwo(width) && isPowerOfTwo(height);
-
-  t.wrapS = canRepeat ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
-  t.wrapT = canRepeat ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
-  t.repeat.set(canRepeat ? repeatX : 1, canRepeat ? repeatY : 1);
-  t.generateMipmaps = canRepeat;
-  t.minFilter = canRepeat ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
-  t.magFilter = THREE.LinearFilter;
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
-  t.needsUpdate = true;
-}
-
-function useSafeTexture(textureUrl: string | null) {
-  const [texture, setTexture] = useState<THREE.Texture | null>(null);
-  useEffect(() => {
-    if (!textureUrl) { setTexture(null); return; }
-    let active = true;
-    const loader = new THREE.TextureLoader();
-    loader.load(
-      textureUrl,
-      (t) => {
-        if (!active) { t.dispose(); return; }
-
-        const renderableTexture = createPowerOfTwoTexture(t);
-        configureTexture(renderableTexture);
-        setTexture(renderableTexture);
-      },
-      undefined,
-      () => { if (active) setTexture(null); },
-    );
-    return () => {
-      active = false;
-      setTexture((currentTexture) => {
-        currentTexture?.dispose();
-        return null;
-      });
-    };
-  }, [textureUrl]);
-  return texture;
-}
-
-function useRepeatedTexture(
-  texture: THREE.Texture | null,
-  repeatX: number,
-  repeatY: number,
-) {
-  const repeatedTexture = useMemo(() => {
-    if (!texture) return null;
-
-    const clonedTexture = texture.clone();
-    clonedTexture.needsUpdate = true;
-    configureTexture(clonedTexture, repeatX, repeatY);
-    return clonedTexture;
-  }, [repeatX, repeatY, texture]);
-
-  useEffect(() => () => repeatedTexture?.dispose(), [repeatedTexture]);
-
-  return repeatedTexture;
-}
-
-// ---------------------------------------------------------------------------
-// Procedural stone material
-// ---------------------------------------------------------------------------
-
-function StoneMaterial({
-  stoneName,
-  texture,
-  colorOffset = 0,
-  roughnessOffset = 0,
-}: {
-  stoneName: string;
-  texture: THREE.Texture | null;
-  colorOffset?: number;
-  roughnessOffset?: number;
-}) {
-  const profile = useMemo(() => resolveStoneProfile(stoneName), [stoneName]);
-  const baseColor = useMemo(() => {
-    const c = new THREE.Color(profile.base);
-    c.offsetHSL(0, 0, colorOffset);
-    return c;
-  }, [profile.base, colorOffset]);
-
-  return (
-    <meshPhysicalMaterial
-      color={texture ? '#ffffff' : baseColor}
-      map={texture ?? undefined}
-      roughness={Math.max(0.1, profile.roughness + roughnessOffset)}
-      metalness={profile.metalness}
-      clearcoat={profile.clearcoat}
-      clearcoatRoughness={profile.clearcoatRoughness}
-      reflectivity={profile.reflectivity}
-      envMapIntensity={1.4}
-    />
-  );
-}
-
-function StonePhotoSurface({
-  texture,
-  width,
-  height,
-  repeatX,
-  repeatY,
-  position,
-  rotation,
-}: {
-  texture: THREE.Texture | null;
-  width: number;
-  height: number;
-  repeatX: number;
-  repeatY: number;
-  position: [number, number, number];
-  rotation?: [number, number, number];
-}) {
-  const repeatedTexture = useRepeatedTexture(texture, repeatX, repeatY);
-
-  if (!repeatedTexture) return null;
-
-  return (
-    <mesh position={position} rotation={rotation}>
-      <planeGeometry args={[width, height]} />
-      <meshPhysicalMaterial
-        map={repeatedTexture}
-        color="#ffffff"
-        roughness={0.34}
-        metalness={0.02}
-        clearcoat={0.42}
-        clearcoatRoughness={0.2}
-        reflectivity={0.38}
-        envMapIntensity={0.5}
-        polygonOffset
-        polygonOffsetFactor={-1}
-        polygonOffsetUnits={-1}
-      />
-    </mesh>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Procedural veins (used only without texture)
-// ---------------------------------------------------------------------------
-
-function StoneVeins({
-  width,
-  depth,
-  thickness,
-  stoneName,
-}: {
-  width: number;
-  depth: number;
-  thickness: number;
-  stoneName: string;
-}) {
-  const profile = useMemo(() => resolveStoneProfile(stoneName), [stoneName]);
-
-  const veins = useMemo(() => {
-    const seed = stoneName.length;
-    return Array.from({ length: 11 }, (_, i) => {
-      const t = (i + 1) / 12;
-      const offset = Math.sin((i + seed) * 1.37) * 0.14;
-      return {
-        x: width * (t - 0.5),
-        z: depth * offset,
-        len: width * (0.38 + (i % 4) * 0.11),
-        opacity: 0.08 + (i % 3) * 0.055,
-        rotation: -0.28 + i * 0.055,
-        width: i % 3 === 0 ? 0.022 : 0.009,
-      };
-    });
-  }, [depth, width, stoneName]);
-
-  return (
-    <group position={[0, thickness / 2 + 0.003, 0]}>
-      {veins.map((v) => (
-        <mesh
-          key={`${v.x}-${v.len}`}
-          position={[v.x, 0, v.z]}
-          rotation={[-Math.PI / 2, 0, v.rotation]}
-        >
-          <planeGeometry args={[v.len, v.width]} />
-          <meshBasicMaterial
-            color={profile.vein}
-            transparent
-            opacity={v.opacity}
-            depthWrite={false}
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Countertop edge profile (chanfered highlight strip)
-// ---------------------------------------------------------------------------
-
-function EdgeProfile({
-  width,
-  depth,
-  thickness,
-  edgeFinishType,
-}: {
-  width: number;
-  depth: number;
-  thickness: number;
-  edgeFinishType: NonNullable<ThreeDPreviewProps['edgeFinishType']>;
-}) {
-  const frontHighlightHeight =
-    edgeFinishType === 'miter45' ? 0.028 : edgeFinishType === 'rounded' ? 0.014 : 0.010;
-  const frontHighlightY =
-    edgeFinishType === 'miter45' ? thickness / 2 - 0.018 : thickness / 2 - 0.003;
-  const frontHighlightOpacity =
-    edgeFinishType === 'miter45' ? 0.22 : edgeFinishType === 'rounded' ? 0.3 : 0.18;
-
-  return (
-    <group>
-      <mesh position={[0, thickness / 2 - 0.003, depth / 2 - 0.004]}>
-        <boxGeometry args={[width - 0.004, 0.005, 0.010]} />
-        <meshPhysicalMaterial
-          color="#ffffff"
-          transparent
-          opacity={0.28}
-          roughness={0.05}
-          clearcoat={1}
-          depthWrite={false}
-        />
-      </mesh>
-      <mesh position={[0, frontHighlightY, depth / 2 + 0.002]}>
-        <boxGeometry args={[width - 0.012, frontHighlightHeight, 0.003]} />
-        <meshPhysicalMaterial
-          color="#ffffff"
-          transparent
-          opacity={frontHighlightOpacity}
-          roughness={0.08}
-          clearcoat={1}
-          depthWrite={false}
-        />
-      </mesh>
-      {edgeFinishType === 'miter45' && (
-        <mesh
-          position={[0, thickness / 2 - 0.016, depth / 2 + 0.005]}
-          rotation={[0.44, 0, 0]}
-        >
-          <boxGeometry args={[width - 0.018, 0.006, 0.036]} />
-          <meshPhysicalMaterial
-            color="#ffffff"
-            transparent
-            opacity={0.2}
-            roughness={0.12}
-            clearcoat={0.8}
-            depthWrite={false}
-          />
-        </mesh>
-      )}
-    </group>
-  );
-}
-
-function JoinShadow({
-  width,
-  position,
-}: {
-  width: number;
-  position: [number, number, number];
-}) {
-  return (
-    <mesh position={position}>
-      <boxGeometry args={[width, 0.006, 0.006]} />
-      <meshBasicMaterial
-        color="#191715"
-        transparent
-        opacity={0.28}
-        depthWrite={false}
-      />
-    </mesh>
-  );
-}
-
-function WetAreaMarker({
-  width,
-  depth,
-  thickness,
-  enabled,
-  wetAreaWidth,
-  wetAreaDepth,
-  wetAreaPosition,
-}: {
-  width: number;
-  depth: number;
-  thickness: number;
-  enabled: boolean;
-  wetAreaWidth?: number;
-  wetAreaDepth?: number;
-  wetAreaPosition?: ThreeDPreviewProps['wetAreaPosition'];
-}) {
-  if (!enabled) return null;
-
-  const markerWidth = clamp(wetAreaWidth ?? width * 0.36, width * 0.16, width * 0.62);
-  const markerDepth = clamp(wetAreaDepth ?? depth * 0.46, depth * 0.18, depth * 0.72);
-  const markerX = clamp(wetAreaPosition?.x ?? width * 0.16, -width * 0.32, width * 0.32);
-  const markerZ = clamp(wetAreaPosition?.z ?? depth * 0.05, -depth * 0.24, depth * 0.24);
-
-  return (
-    <group position={[markerX, thickness / 2 + 0.009, markerZ]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[markerWidth, markerDepth]} />
-        <meshPhysicalMaterial
-          color="#ffffff"
-          transparent
-          opacity={0.13}
-          roughness={0.08}
-          metalness={0}
-          clearcoat={0.95}
-          clearcoatRoughness={0.05}
-          depthWrite={false}
-          polygonOffset
-          polygonOffsetFactor={-2}
-          polygonOffsetUnits={-2}
-        />
-      </mesh>
-
-      <mesh
-        position={[0, 0.002, -markerDepth / 2]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      >
-        <planeGeometry args={[markerWidth * 0.82, 0.008]} />
-        <meshBasicMaterial
-          color="#2d2924"
-          transparent
-          opacity={0.18}
-          depthWrite={false}
-        />
-      </mesh>
-    </group>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Floor tile (subtle grid / porcelain)
-// ---------------------------------------------------------------------------
-
-function FloorTile() {
-  const floorRef = useRef<THREE.Mesh>(null);
-  return (
-    <mesh
-      ref={floorRef}
-      rotation={[-Math.PI / 2, 0, 0]}
-      position={[0, -0.001, 0]}
-      receiveShadow
-    >
-      <planeGeometry args={[7, 5]} />
-      <meshPhysicalMaterial
-        color="#e4e0da"
-        roughness={0.30}
-        metalness={0.01}
-        clearcoat={0.35}
-        clearcoatRoughness={0.28}
-        reflectivity={0.40}
-        envMapIntensity={0.55}
-      />
-    </mesh>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Wall behind countertop
-// ---------------------------------------------------------------------------
-
-function BackWall({
-  width,
-  height,
-}: {
-  width: number;
-  height: number;
-}) {
-  return (
-    <mesh position={[0, height / 2 - 0.22, -1.12]} receiveShadow>
-      <planeGeometry args={[width + 0.8, height + 0.6]} />
-      <meshPhysicalMaterial
-        color="#f0ebe3"
-        roughness={0.82}
-        metalness={0}
-        clearcoat={0.04}
-        envMapIntensity={0.2}
-      />
-    </mesh>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Auto-rotate helper (subtle, stops on user interaction)
-// ---------------------------------------------------------------------------
-
 function AutoRotate({ targetRef }: { targetRef: React.RefObject<THREE.Group | null> }) {
   const t = useRef(0);
+
   useFrame((_, delta) => {
     if (!targetRef.current) return;
     t.current += delta * 0.12;
     targetRef.current.rotation.y = Math.sin(t.current) * 0.08 - 0.12;
   });
+
   return null;
 }
-
-// ---------------------------------------------------------------------------
-// Main scene
-// ---------------------------------------------------------------------------
 
 function CountertopScene({
   width,
@@ -621,132 +80,57 @@ function CountertopScene({
   wetAreaDepth,
   wetAreaPosition,
 }: ThreeDPreviewProps) {
+  const visualEdgeFinish = resolveEdgeFinishVisualType(edgeFinishType);
   const resolvedTextureUrl = resolveUsableTextureUrl(stoneName, stoneImageUrl);
   const texture = useSafeTexture(resolvedTextureUrl);
   const groupRef = useRef<THREE.Group>(null);
 
-  const model = useMemo(() => {
-    const w = Math.min(3.6, Math.max(0.8, width || 0.8));
-    const d = Math.min(1.75, Math.max(0.42, depth || 0.42));
-    const t = Math.min(0.26, Math.max(0.09, thickness / 18));
-    const edgeRadius =
-      edgeFinishType === 'straight'
-        ? 0.006
-        : edgeFinishType === 'miter45'
-          ? 0.014
-          : Math.min(0.026, Math.max(0.014, t * 0.14));
-    const backsplashH = backsplashEnabled
-      ? clamp(backsplashHeightCm / 100, 0.04, 0.18)
-      : 0;
-    const backsplashT = Math.min(0.065, Math.max(0.04, t * 0.36));
-    const skirtH = frontApronEnabled
-      ? clamp(frontApronHeightCm / 100, 0.04, 0.24)
-      : 0;
-    const skirtT = Math.min(0.065, Math.max(0.04, t * 0.36));
+  const model = useMemo(
+    () =>
+      buildCountertopModel({
+        width,
+        depth,
+        thickness,
+        backsplashEnabled,
+        backsplashHeightCm,
+        frontApronEnabled,
+        frontApronHeightCm,
+        visualEdgeFinish,
+      }),
+    [
+      backsplashEnabled,
+      backsplashHeightCm,
+      depth,
+      frontApronEnabled,
+      frontApronHeightCm,
+      thickness,
+      visualEdgeFinish,
+      width,
+    ],
+  );
 
-    return { w, d, t, edgeRadius, backsplashH, backsplashT, skirtH, skirtT };
-  }, [
-    backsplashEnabled,
-    backsplashHeightCm,
-    depth,
-    edgeFinishType,
-    frontApronEnabled,
-    frontApronHeightCm,
-    thickness,
-    width,
-  ]);
-
-  // Group Y offset so piece sits on floor
   const groupY = model.t / 2 + model.skirtH + 0.018;
 
   return (
     <>
-      {/* Background */}
-      <color attach="background" args={['#e8e3db']} />
-      <fog attach="fog" args={['#e8e3db', 5.5, 9.0]} />
-
-      {/* Key light — warm, from upper right front */}
-      <directionalLight
-        castShadow
-        position={[3.5, 5.2, 3.8]}
-        intensity={2.4}
-        color="#fff8f0"
-        shadow-bias={-0.0006}
-        shadow-normalBias={0.02}
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-near={0.5}
-        shadow-camera-far={18}
-        shadow-camera-left={-4}
-        shadow-camera-right={4}
-        shadow-camera-top={4}
-        shadow-camera-bottom={-4}
+      <SceneLighting
+        wallWidth={model.w + 0.8}
+        wallHeight={0.8 + model.backsplashH + groupY}
       />
-
-      {/* Fill light — cool, from upper left */}
-      <directionalLight
-        position={[-3.8, 3.2, -2.2]}
-        intensity={0.55}
-        color="#d4e8f2"
-      />
-
-      {/* Bounce light from below — simulates floor bounce */}
-      <pointLight
-        position={[0, -0.3, 1.2]}
-        intensity={0.28}
-        color="#f5ece0"
-        distance={3.5}
-      />
-
-      {/* Back rim light — adds depth separation */}
-      <pointLight
-        position={[0, 1.8, -1.6]}
-        intensity={0.38}
-        color="#e8f0ff"
-        distance={4}
-      />
-
-      {/* Ambient hemisphere — sky / ground */}
-      <hemisphereLight args={['#c8d8e8', '#b8a898', 0.55]} />
-
-      {/* Soft fill spot for frontal clarity */}
-      <spotLight
-        position={[0, 3.2, 2.6]}
-        intensity={0.72}
-        angle={0.55}
-        penumbra={0.7}
-        color="#fff4e8"
-        castShadow={false}
-      />
-
-      {/* Scene geometry */}
-      <BackWall width={model.w + 0.8} height={0.8 + model.backsplashH + groupY} />
-      <FloorTile />
 
       <group ref={groupRef} position={[0, groupY, 0]}>
         <AutoRotate targetRef={groupRef} />
 
-        {/* ── Countertop slab ── */}
-        <mesh castShadow receiveShadow>
-          <RoundedBox
-            args={[model.w, model.t, model.d]}
-            radius={model.edgeRadius}
-            smoothness={8}
-          >
-            <StoneMaterial stoneName={stoneName} texture={texture} />
-          </RoundedBox>
-        </mesh>
-
-        <StonePhotoSurface
+        <StoneTop
+          width={model.w}
+          depth={model.d}
+          thickness={model.t}
+          edgeRadius={model.edgeRadius}
+          stoneName={stoneName}
           texture={texture}
-          width={model.w * 0.965}
-          height={model.d * 0.92}
-          repeatX={Math.max(1.4, model.w * 1.1)}
-          repeatY={Math.max(0.9, model.d * 1.25)}
-          position={[0, model.t / 2 + 0.005, 0.006]}
-          rotation={[-Math.PI / 2, 0, 0]}
         />
 
-        <WetAreaMarker
+        <WetArea
           width={model.w}
           depth={model.d}
           thickness={model.t}
@@ -756,208 +140,71 @@ function CountertopScene({
           wetAreaPosition={wetAreaPosition}
         />
 
-        {/* Edge highlight catch-light */}
-        <EdgeProfile
+        <EdgeFinish
           width={model.w}
           depth={model.d}
           thickness={model.t}
-          edgeFinishType={edgeFinishType}
+          stoneName={stoneName}
+          texture={texture}
+          edgeFinishType={visualEdgeFinish}
         />
 
-        {/* ── Backsplash ── */}
         {backsplashEnabled && (
-          <>
-            <mesh
-              castShadow
-              receiveShadow
-              position={[
-                0,
-                model.t / 2 + model.backsplashH / 2 - 0.006,
-                -model.d / 2 + model.backsplashT / 2 - 0.002,
-              ]}
-            >
-              <RoundedBox
-                args={[model.w * 0.982, model.backsplashH, model.backsplashT]}
-                radius={Math.min(0.012, model.edgeRadius * 0.65)}
-                smoothness={6}
-              >
-                <StoneMaterial
-                  stoneName={stoneName}
-                  texture={texture}
-                  colorOffset={-0.025}
-                  roughnessOffset={0.04}
-                />
-              </RoundedBox>
-            </mesh>
-
-            <StonePhotoSurface
-              texture={texture}
-              width={model.w * 0.95}
-              height={model.backsplashH * 0.88}
-              repeatX={Math.max(1.4, model.w)}
-              repeatY={Math.max(0.35, model.backsplashH * 1.8)}
-              position={[
-                0,
-                model.t / 2 + model.backsplashH / 2 - 0.006,
-                -model.d / 2 + model.backsplashT + 0.001,
-              ]}
-            />
-
-            <JoinShadow
-              width={model.w * 0.96}
-              position={[0, model.t / 2 + 0.004, -model.d / 2 + model.backsplashT + 0.002]}
-            />
-          </>
+          <Backsplash
+            width={model.w}
+            depth={model.d}
+            thickness={model.t}
+            backsplashHeight={model.backsplashH}
+            backsplashThickness={model.backsplashT}
+            edgeRadius={model.edgeRadius}
+            stoneName={stoneName}
+            texture={texture}
+          />
         )}
 
-        {/* ── Side backsplashes ── */}
         {leftBacksplashEnabled && backsplashEnabled && (
-          <group
-            position={[
-              -model.w / 2 + model.backsplashT / 2 + 0.002,
-              model.t / 2 + model.backsplashH / 2 - 0.006,
-              -model.backsplashT / 2,
-            ]}
-          >
-            <RoundedBox
-              args={[model.backsplashT, model.backsplashH, model.d - model.backsplashT]}
-              radius={Math.min(0.012, model.edgeRadius * 0.6)}
-              smoothness={6}
-            >
-              <StoneMaterial
-                stoneName={stoneName}
-                texture={texture}
-                colorOffset={-0.03}
-                roughnessOffset={0.04}
-              />
-            </RoundedBox>
-            <StonePhotoSurface
-              texture={texture}
-              width={model.d - model.backsplashT * 1.4}
-              height={model.backsplashH * 0.86}
-              repeatX={Math.max(0.8, model.d)}
-              repeatY={Math.max(0.35, model.backsplashH * 1.8)}
-              position={[-model.backsplashT / 2 - 0.002, 0, model.backsplashT / 2]}
-              rotation={[0, -Math.PI / 2, 0]}
-            />
-          </group>
+          <SideBacksplash
+            side="left"
+            width={model.w}
+            depth={model.d}
+            thickness={model.t}
+            backsplashHeight={model.backsplashH}
+            backsplashThickness={model.backsplashT}
+            edgeRadius={model.edgeRadius}
+            stoneName={stoneName}
+            texture={texture}
+          />
         )}
 
         {rightBacksplashEnabled && backsplashEnabled && (
-          <group
-            position={[
-              model.w / 2 - model.backsplashT / 2 - 0.002,
-              model.t / 2 + model.backsplashH / 2 - 0.006,
-              -model.backsplashT / 2,
-            ]}
-          >
-            <RoundedBox
-              args={[model.backsplashT, model.backsplashH, model.d - model.backsplashT]}
-              radius={Math.min(0.012, model.edgeRadius * 0.6)}
-              smoothness={6}
-            >
-              <StoneMaterial
-                stoneName={stoneName}
-                texture={texture}
-                colorOffset={-0.03}
-                roughnessOffset={0.04}
-              />
-            </RoundedBox>
-            <StonePhotoSurface
-              texture={texture}
-              width={model.d - model.backsplashT * 1.4}
-              height={model.backsplashH * 0.86}
-              repeatX={Math.max(0.8, model.d)}
-              repeatY={Math.max(0.35, model.backsplashH * 1.8)}
-              position={[model.backsplashT / 2 + 0.002, 0, model.backsplashT / 2]}
-              rotation={[0, Math.PI / 2, 0]}
-            />
-          </group>
+          <SideBacksplash
+            side="right"
+            width={model.w}
+            depth={model.d}
+            thickness={model.t}
+            backsplashHeight={model.backsplashH}
+            backsplashThickness={model.backsplashT}
+            edgeRadius={model.edgeRadius}
+            stoneName={stoneName}
+            texture={texture}
+          />
         )}
 
-        {/* ── Front skirt (fascia) ── */}
-        {frontApronEnabled && (
-          <>
-            <mesh
-              castShadow
-              receiveShadow
-              position={[
-                0,
-                -model.t / 2 - model.skirtH / 2 + 0.006,
-                model.d / 2 - model.skirtT / 2 + 0.002,
-              ]}
-            >
-              <RoundedBox
-                args={[model.w * 0.988, model.skirtH, model.skirtT]}
-                radius={Math.min(0.014, model.edgeRadius * 0.72)}
-                smoothness={6}
-              >
-                <StoneMaterial
-                  stoneName={stoneName}
-                  texture={texture}
-                  colorOffset={-0.045}
-                  roughnessOffset={0.06}
-                />
-              </RoundedBox>
-            </mesh>
-
-            <StonePhotoSurface
-              texture={texture}
-              width={model.w * 0.96}
-              height={model.skirtH * 0.9}
-              repeatX={Math.max(1.4, model.w)}
-              repeatY={Math.max(0.4, model.skirtH * 1.8)}
-              position={[
-                0,
-                -model.t / 2 - model.skirtH / 2 + 0.006,
-                model.d / 2 + 0.001,
-              ]}
-            />
-
-            <JoinShadow
-              width={model.w * 0.95}
-              position={[0, -model.t / 2 + 0.002, model.d / 2 + 0.005]}
-            />
-
-            {/* ── Lower front stone lip ── */}
-            <mesh
-              receiveShadow
-              position={[
-                0,
-                -model.t / 2 - model.skirtH + 0.008,
-                model.d / 2 - 0.006,
-              ]}
-            >
-              <RoundedBox
-                args={[model.w * 0.982, 0.018, 0.026]}
-                radius={0.007}
-                smoothness={5}
-              >
-                <StoneMaterial
-                  stoneName={stoneName}
-                  texture={texture}
-                  colorOffset={-0.065}
-                  roughnessOffset={0.08}
-                />
-              </RoundedBox>
-            </mesh>
-
-            <StonePhotoSurface
-              texture={texture}
-              width={model.w * 0.95}
-              height={0.018}
-              repeatX={Math.max(1.4, model.w)}
-              repeatY={0.25}
-              position={[
-                0,
-                -model.t / 2 - model.skirtH + 0.008,
-                model.d / 2 + 0.008,
-              ]}
-            />
-          </>
+        {model.skirtEnabled && (
+          <FrontApron
+            width={model.w}
+            depth={model.d}
+            thickness={model.t}
+            skirtHeight={model.skirtH}
+            skirtThickness={model.skirtT}
+            edgeRadius={model.edgeRadius}
+            stoneName={stoneName}
+            texture={texture}
+            visualEdgeFinish={visualEdgeFinish}
+          />
         )}
 
-        {!frontApronEnabled && (
+        {!model.skirtEnabled && (
           <mesh position={[0, -model.t / 2 + 0.002, model.d / 2 + 0.003]}>
             <boxGeometry args={[model.w * 0.94, 0.004, 0.004]} />
             <meshBasicMaterial
@@ -968,48 +215,12 @@ function CountertopScene({
             />
           </mesh>
         )}
-
-        {/* ── Procedural veins (no texture) ── */}
-        {!texture && (
-          <StoneVeins
-            width={model.w}
-            depth={model.d}
-            thickness={model.t}
-            stoneName={stoneName}
-          />
-        )}
       </group>
 
-      {/* Soft contact shadow on floor */}
-      <ContactShadows
-        position={[0, 0.001, 0]}
-        opacity={0.55}
-        scale={5.5}
-        blur={2.6}
-        far={2.2}
-        color="#4a3e30"
-      />
-
-      {/* Orbit controls */}
-      <OrbitControls
-        enablePan={false}
-        enableDamping
-        dampingFactor={0.07}
-        minDistance={1.55}
-        maxDistance={5.2}
-        maxPolarAngle={Math.PI / 2.12}
-        target={[0, 0.28, 0]}
-        rotateSpeed={0.72}
-      />
-
-      <Preload all />
+      <SceneCamera />
     </>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Fallback UI
-// ---------------------------------------------------------------------------
 
 function PreviewFallback() {
   return (
@@ -1025,10 +236,6 @@ function PreviewFallback() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Public component
-// ---------------------------------------------------------------------------
-
 export function ThreeDPreview(props: ThreeDPreviewProps) {
   const webGLSupported = useMemo(() => hasWebGLSupport(), []);
 
@@ -1036,7 +243,6 @@ export function ThreeDPreview(props: ThreeDPreviewProps) {
 
   return (
     <div className="overflow-hidden rounded-xl border border-stoneLine bg-stone-100 shadow-lg">
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-stoneLine bg-white/90 px-4 py-3 backdrop-blur-sm">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-moss">
@@ -1048,13 +254,10 @@ export function ThreeDPreview(props: ThreeDPreviewProps) {
           <p className="text-xs font-medium text-stone-500">
             {props.width.toFixed(2)} m × {props.depth.toFixed(2)} m
           </p>
-          <p className="text-xs text-stone-400">
-            esp. {props.thickness} mm
-          </p>
+          <p className="text-xs text-stone-400">esp. {props.thickness} mm</p>
         </div>
       </div>
 
-      {/* Canvas */}
       <div className="relative h-[380px] w-full sm:h-[460px] lg:h-[500px]">
         <PreviewErrorBoundary>
           <Suspense fallback={<PreviewFallback />}>
@@ -1073,7 +276,6 @@ export function ThreeDPreview(props: ThreeDPreviewProps) {
           </Suspense>
         </PreviewErrorBoundary>
 
-        {/* Drag hint */}
         <p className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-black/20 px-2.5 py-1 text-[10px] font-medium text-white/80 backdrop-blur-sm">
           arraste para girar
         </p>
