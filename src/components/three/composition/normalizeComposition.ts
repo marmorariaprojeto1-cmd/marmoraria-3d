@@ -1,6 +1,7 @@
 import type { ThreeDPreviewProps } from '../../../types/threePreview';
 
 export type NormalizedThreeDPreviewProps = {
+  topComponentId?: string;
   width: number;
   depth: number;
   thickness: number;
@@ -27,6 +28,7 @@ export function normalizeComposition(
     const { composition } = props;
 
     return {
+      topComponentId: composition.top.id ?? composition.top.componentId,
       width: composition.top.width,
       depth: composition.top.depth,
       thickness: composition.top.thicknessMm / 10,

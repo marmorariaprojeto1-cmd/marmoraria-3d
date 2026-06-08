@@ -12,7 +12,8 @@ export type ThreeDWetAreaPosition = {
 };
 
 export type ThreeDTopComponent = {
-  componentId: string;
+  id?: string;
+  componentId?: string;
   type: string;
   width: number;
   depth: number;

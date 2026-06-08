@@ -6,6 +6,7 @@ import {
   normalizeComposition,
   type NormalizedThreeDPreviewProps,
 } from './composition/normalizeComposition';
+import { findThreeDComponent } from './catalog';
 import { Backsplash } from './parts/Backsplash';
 import { EdgeFinish } from './parts/EdgeFinish';
 import { FrontApron } from './parts/FrontApron';
@@ -67,6 +68,7 @@ function AutoRotate({ targetRef }: { targetRef: React.RefObject<THREE.Group | nu
 }
 
 function CountertopScene({
+  topComponentId,
   width,
   depth,
   thickness,
@@ -88,6 +90,9 @@ function CountertopScene({
   const resolvedTextureUrl = resolveUsableTextureUrl(stoneName, stoneImageUrl);
   const texture = useSafeTexture(resolvedTextureUrl);
   const groupRef = useRef<THREE.Group>(null);
+  const TopComponent = topComponentId
+    ? findThreeDComponent(topComponentId)?.component
+    : null;
 
   const model = useMemo(
     () =>
@@ -125,14 +130,24 @@ function CountertopScene({
       <group ref={groupRef} position={[0, groupY, 0]}>
         <AutoRotate targetRef={groupRef} />
 
-        <StoneTop
-          width={model.w}
-          depth={model.d}
-          thickness={model.t}
-          edgeRadius={model.edgeRadius}
-          stoneName={stoneName}
-          texture={texture}
-        />
+        {TopComponent ? (
+          <TopComponent
+            width={model.w}
+            depth={model.d}
+            edgeRadius={model.edgeRadius}
+            stoneName={stoneName}
+            texture={texture}
+          />
+        ) : (
+          <StoneTop
+            width={model.w}
+            depth={model.d}
+            thickness={model.t}
+            edgeRadius={model.edgeRadius}
+            stoneName={stoneName}
+            texture={texture}
+          />
+        )}
 
         <WetArea
           width={model.w}
