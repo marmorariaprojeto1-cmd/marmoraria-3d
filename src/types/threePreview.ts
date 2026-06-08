@@ -36,6 +36,7 @@ export type ThreeDWetAreaComponent = {
 };
 
 export type ThreeDBacksplashComponent = {
+  id?: string;
   componentId: string;
   type: string;
   enabled: boolean;
@@ -45,6 +46,7 @@ export type ThreeDBacksplashComponent = {
 };
 
 export type ThreeDFrontApronComponent = {
+  id?: string;
   componentId: string;
   type: string;
   enabled: boolean;

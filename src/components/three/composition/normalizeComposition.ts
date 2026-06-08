@@ -1,7 +1,21 @@
 import type { ThreeDPreviewProps } from '../../../types/threePreview';
 
+function resolveBacksplashHeightMm(componentId?: string, fallbackHeightMm = 0) {
+  if (componentId === 'COMPONENT_021') return 50;
+  if (componentId === 'COMPONENT_022') return 100;
+  return fallbackHeightMm;
+}
+
+function resolveFrontApronHeightMm(componentId?: string, fallbackHeightMm = 0) {
+  if (componentId === 'COMPONENT_031') return 40;
+  if (componentId === 'COMPONENT_032') return 60;
+  return fallbackHeightMm;
+}
+
 export type NormalizedThreeDPreviewProps = {
   topComponentId?: string;
+  backsplashComponentId?: string;
+  frontApronComponentId?: string;
   width: number;
   depth: number;
   thickness: number;
@@ -26,9 +40,13 @@ export function normalizeComposition(
 ): NormalizedThreeDPreviewProps {
   if (props.composition) {
     const { composition } = props;
+    const backsplashComponentId = composition.backsplash?.id;
+    const frontApronComponentId = composition.frontApron?.id;
 
     return {
       topComponentId: composition.top.id ?? composition.top.componentId,
+      backsplashComponentId,
+      frontApronComponentId,
       width: composition.top.width,
       depth: composition.top.depth,
       thickness: composition.top.thicknessMm / 10,
@@ -36,11 +54,19 @@ export function normalizeComposition(
       stoneImageUrl: composition.material.stoneImageUrl ?? props.stoneImageUrl,
       sinkEnabled: props.sinkEnabled,
       backsplashEnabled: composition.backsplash?.enabled ?? false,
-      backsplashHeightCm: (composition.backsplash?.heightMm ?? 0) / 10,
+      backsplashHeightCm:
+        resolveBacksplashHeightMm(
+          backsplashComponentId,
+          composition.backsplash?.heightMm,
+        ) / 10,
       leftBacksplashEnabled: composition.backsplash?.leftEnabled ?? false,
       rightBacksplashEnabled: composition.backsplash?.rightEnabled ?? false,
       frontApronEnabled: composition.frontApron?.enabled ?? false,
-      frontApronHeightCm: (composition.frontApron?.heightMm ?? 0) / 10,
+      frontApronHeightCm:
+        resolveFrontApronHeightMm(
+          frontApronComponentId,
+          composition.frontApron?.heightMm,
+        ) / 10,
       edgeFinishType: composition.edgeFinish?.type ?? 'straight',
       wetAreaEnabled: composition.wetArea?.enabled ?? false,
       wetAreaWidth: composition.wetArea?.width,

@@ -69,6 +69,8 @@ function AutoRotate({ targetRef }: { targetRef: React.RefObject<THREE.Group | nu
 
 function CountertopScene({
   topComponentId,
+  backsplashComponentId,
+  frontApronComponentId,
   width,
   depth,
   thickness,
@@ -90,9 +92,25 @@ function CountertopScene({
   const resolvedTextureUrl = resolveUsableTextureUrl(stoneName, stoneImageUrl);
   const texture = useSafeTexture(resolvedTextureUrl);
   const groupRef = useRef<THREE.Group>(null);
-  const TopComponent = topComponentId
-    ? findThreeDComponent(topComponentId)?.component
+  const topRegistryItem = topComponentId
+    ? findThreeDComponent(topComponentId)
     : null;
+  const backsplashRegistryItem = backsplashComponentId
+    ? findThreeDComponent(backsplashComponentId)
+    : null;
+  const frontApronRegistryItem = frontApronComponentId
+    ? findThreeDComponent(frontApronComponentId)
+    : null;
+  const TopComponent =
+    topRegistryItem?.category === 'top' ? topRegistryItem.component : null;
+  const BacksplashComponent =
+    backsplashRegistryItem?.category === 'backsplash'
+      ? backsplashRegistryItem.component
+      : null;
+  const FrontApronComponent =
+    frontApronRegistryItem?.category === 'frontApron'
+      ? frontApronRegistryItem.component
+      : null;
 
   const model = useMemo(
     () =>
@@ -134,6 +152,7 @@ function CountertopScene({
           <TopComponent
             width={model.w}
             depth={model.d}
+            thickness={model.t}
             edgeRadius={model.edgeRadius}
             stoneName={stoneName}
             texture={texture}
@@ -168,7 +187,19 @@ function CountertopScene({
           edgeFinishType={visualEdgeFinish}
         />
 
-        {backsplashEnabled && (
+        {backsplashEnabled && BacksplashComponent ? (
+          <BacksplashComponent
+            width={model.w}
+            depth={model.d}
+            thickness={model.t}
+            backsplashHeight={model.backsplashH}
+            backsplashThickness={model.backsplashT}
+            edgeRadius={model.edgeRadius}
+            stoneName={stoneName}
+            texture={texture}
+          />
+        ) : (
+          backsplashEnabled && (
           <Backsplash
             width={model.w}
             depth={model.d}
@@ -179,6 +210,7 @@ function CountertopScene({
             stoneName={stoneName}
             texture={texture}
           />
+          )
         )}
 
         {leftBacksplashEnabled && backsplashEnabled && (
@@ -209,7 +241,20 @@ function CountertopScene({
           />
         )}
 
-        {model.skirtEnabled && (
+        {model.skirtEnabled && FrontApronComponent ? (
+          <FrontApronComponent
+            width={model.w}
+            depth={model.d}
+            thickness={model.t}
+            skirtHeight={model.skirtH}
+            skirtThickness={model.skirtT}
+            edgeRadius={model.edgeRadius}
+            stoneName={stoneName}
+            texture={texture}
+            visualEdgeFinish={visualEdgeFinish}
+          />
+        ) : (
+          model.skirtEnabled && (
           <FrontApron
             width={model.w}
             depth={model.d}
@@ -221,6 +266,7 @@ function CountertopScene({
             texture={texture}
             visualEdgeFinish={visualEdgeFinish}
           />
+          )
         )}
 
         {!model.skirtEnabled && (

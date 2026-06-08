@@ -1,18 +1,10 @@
-import * as THREE from 'three';
 import { StoneTop } from '../parts/StoneTop';
+import type { ThreeDRegisteredComponentProps } from './types';
 
 export const COMPONENT_002_ID = 'COMPONENT_002';
 export const COMPONENT_002_NAME = 'Tampo Reto 30 mm';
 
 const TOP_30MM_VISUAL_THICKNESS = 3 / 18;
-
-export type Component002Top30mmProps = {
-  width: number;
-  depth: number;
-  edgeRadius: number;
-  stoneName: string;
-  texture: THREE.Texture | null;
-};
 
 export function Component002Top30mm({
   width,
@@ -20,7 +12,7 @@ export function Component002Top30mm({
   edgeRadius,
   stoneName,
   texture,
-}: Component002Top30mmProps) {
+}: ThreeDRegisteredComponentProps) {
   return (
     <StoneTop
       width={width}
