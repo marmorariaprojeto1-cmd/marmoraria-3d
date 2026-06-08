@@ -1,5 +1,54 @@
 import { ThreeDPreview } from '../components/three/ThreeDPreview';
-import type { ThreeDPreviewProps } from '../types/threePreview';
+import type {
+  CountertopComposition,
+  ThreeDPreviewProps,
+} from '../types/threePreview';
+
+const fullBacksplashComposition: CountertopComposition = {
+  id: 'preview-frontao-10cm-com-saia',
+  version: 1,
+  top: {
+    componentId: 'COMPONENT_001',
+    type: 'straight_top_30mm',
+    width: 2.4,
+    depth: 0.7,
+    thicknessMm: 30,
+  },
+  material: {
+    stoneName: 'Branco Siena',
+    stoneImageUrl: null,
+    localTextureKey: 'branco-siena',
+  },
+  backsplash: {
+    componentId: 'COMPONENT_022',
+    type: 'back_backsplash',
+    enabled: true,
+    heightMm: 100,
+    leftEnabled: true,
+    rightEnabled: true,
+  },
+  frontApron: {
+    componentId: 'COMPONENT_032',
+    type: 'front_apron',
+    enabled: true,
+    heightMm: 120,
+  },
+  edgeFinish: {
+    type: 'rounded',
+  },
+  wetArea: {
+    componentId: 'COMPONENT_010',
+    type: 'straight_wet_area',
+    enabled: true,
+    width: 0.72,
+    depth: 0.34,
+    position: { x: 0.32, z: 0.04 },
+  },
+  metadata: {
+    source: 'preview-3d',
+    notes: 'Primeiro CountertopComposition real do modulo 3D.',
+  },
+};
 
 const previewExamples: Array<{
   title: string;
@@ -10,21 +59,7 @@ const previewExamples: Array<{
     title: 'Frontão 10 cm com saia',
     description: 'Configuração completa com frontão traseiro, laterais e saia frontal.',
     props: {
-      width: 2.4,
-      depth: 0.7,
-      thickness: 3,
-      stoneName: 'Branco Siena',
-      backsplashEnabled: true,
-      backsplashHeightCm: 10,
-      leftBacksplashEnabled: true,
-      rightBacksplashEnabled: true,
-      frontApronEnabled: true,
-      frontApronHeightCm: 12,
-      edgeFinishType: 'rounded',
-      wetAreaEnabled: true,
-      wetAreaWidth: 0.72,
-      wetAreaDepth: 0.34,
-      wetAreaPosition: { x: 0.32, z: 0.04 },
+      composition: fullBacksplashComposition,
     },
   },
   {

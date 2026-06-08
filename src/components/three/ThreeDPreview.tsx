@@ -19,6 +19,26 @@ import {
   useSafeTexture,
 } from './utils/stoneMaterials';
 
+type NormalizedThreeDPreviewProps = {
+  width: number;
+  depth: number;
+  thickness: number;
+  stoneName: string;
+  stoneImageUrl?: string | null;
+  sinkEnabled?: boolean;
+  backsplashEnabled: boolean;
+  backsplashHeightCm: number;
+  leftBacksplashEnabled: boolean;
+  rightBacksplashEnabled: boolean;
+  frontApronEnabled: boolean;
+  frontApronHeightCm: number;
+  edgeFinishType: NonNullable<ThreeDPreviewProps['edgeFinishType']>;
+  wetAreaEnabled: boolean;
+  wetAreaWidth?: number;
+  wetAreaDepth?: number;
+  wetAreaPosition?: ThreeDPreviewProps['wetAreaPosition'];
+};
+
 type PreviewErrorBoundaryProps = { children: ReactNode };
 type PreviewErrorBoundaryState = { hasError: boolean };
 
@@ -62,6 +82,52 @@ function AutoRotate({ targetRef }: { targetRef: React.RefObject<THREE.Group | nu
   return null;
 }
 
+function normalizePreviewProps(props: ThreeDPreviewProps): NormalizedThreeDPreviewProps {
+  if (props.composition) {
+    const { composition } = props;
+
+    return {
+      width: composition.top.width,
+      depth: composition.top.depth,
+      thickness: composition.top.thicknessMm / 10,
+      stoneName: composition.material.stoneName,
+      stoneImageUrl: composition.material.stoneImageUrl ?? props.stoneImageUrl,
+      sinkEnabled: props.sinkEnabled,
+      backsplashEnabled: composition.backsplash?.enabled ?? false,
+      backsplashHeightCm: (composition.backsplash?.heightMm ?? 0) / 10,
+      leftBacksplashEnabled: composition.backsplash?.leftEnabled ?? false,
+      rightBacksplashEnabled: composition.backsplash?.rightEnabled ?? false,
+      frontApronEnabled: composition.frontApron?.enabled ?? false,
+      frontApronHeightCm: (composition.frontApron?.heightMm ?? 0) / 10,
+      edgeFinishType: composition.edgeFinish?.type ?? 'straight',
+      wetAreaEnabled: composition.wetArea?.enabled ?? false,
+      wetAreaWidth: composition.wetArea?.width,
+      wetAreaDepth: composition.wetArea?.depth,
+      wetAreaPosition: composition.wetArea?.position,
+    };
+  }
+
+  return {
+    width: props.width ?? 0.8,
+    depth: props.depth ?? 0.42,
+    thickness: props.thickness ?? 3,
+    stoneName: props.stoneName ?? 'Pedra não selecionada',
+    stoneImageUrl: props.stoneImageUrl,
+    sinkEnabled: props.sinkEnabled,
+    backsplashEnabled: props.backsplashEnabled ?? true,
+    backsplashHeightCm: props.backsplashHeightCm ?? 8,
+    leftBacksplashEnabled: props.leftBacksplashEnabled ?? false,
+    rightBacksplashEnabled: props.rightBacksplashEnabled ?? false,
+    frontApronEnabled: props.frontApronEnabled ?? true,
+    frontApronHeightCm: props.frontApronHeightCm ?? 12,
+    edgeFinishType: props.edgeFinishType ?? 'rounded',
+    wetAreaEnabled: props.wetAreaEnabled ?? true,
+    wetAreaWidth: props.wetAreaWidth,
+    wetAreaDepth: props.wetAreaDepth,
+    wetAreaPosition: props.wetAreaPosition,
+  };
+}
+
 function CountertopScene({
   width,
   depth,
@@ -79,7 +145,7 @@ function CountertopScene({
   wetAreaWidth,
   wetAreaDepth,
   wetAreaPosition,
-}: ThreeDPreviewProps) {
+}: NormalizedThreeDPreviewProps) {
   const visualEdgeFinish = resolveEdgeFinishVisualType(edgeFinishType);
   const resolvedTextureUrl = resolveUsableTextureUrl(stoneName, stoneImageUrl);
   const texture = useSafeTexture(resolvedTextureUrl);
@@ -238,6 +304,7 @@ function PreviewFallback() {
 
 export function ThreeDPreview(props: ThreeDPreviewProps) {
   const webGLSupported = useMemo(() => hasWebGLSupport(), []);
+  const previewProps = useMemo(() => normalizePreviewProps(props), [props]);
 
   if (!webGLSupported) return <PreviewFallback />;
 
@@ -248,13 +315,15 @@ export function ThreeDPreview(props: ThreeDPreviewProps) {
           <p className="text-xs font-semibold uppercase tracking-widest text-moss">
             Preview 3D
           </p>
-          <p className="text-sm font-semibold text-graphite">{props.stoneName}</p>
+          <p className="text-sm font-semibold text-graphite">
+            {previewProps.stoneName}
+          </p>
         </div>
         <div className="text-right">
           <p className="text-xs font-medium text-stone-500">
-            {props.width.toFixed(2)} m × {props.depth.toFixed(2)} m
+            {previewProps.width.toFixed(2)} m × {previewProps.depth.toFixed(2)} m
           </p>
-          <p className="text-xs text-stone-400">esp. {props.thickness} mm</p>
+          <p className="text-xs text-stone-400">esp. {previewProps.thickness} mm</p>
         </div>
       </div>
 
@@ -271,7 +340,7 @@ export function ThreeDPreview(props: ThreeDPreviewProps) {
                 toneMappingExposure: 1.05,
               }}
             >
-              <CountertopScene {...props} />
+              <CountertopScene {...previewProps} />
             </Canvas>
           </Suspense>
         </PreviewErrorBoundary>
