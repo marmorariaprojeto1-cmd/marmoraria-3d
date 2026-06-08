@@ -9,7 +9,6 @@ import React, {
 } from 'react';
 import {
   ContactShadows,
-  Environment,
   OrbitControls,
   RoundedBox,
   Preload,
@@ -152,15 +151,55 @@ function resolveStoneProfile(stoneName: string): StoneProfile {
 // ---------------------------------------------------------------------------
 
 function resolveUsableTextureUrl(stoneName: string, stoneImageUrl?: string | null) {
-  const url = stoneImageUrl ?? resolveLocalStoneTexture(stoneName);
-  if (!url || !isSupportedStoneTexturePath(url)) return null;
-  return url;
+  if (stoneImageUrl && isSupportedStoneTexturePath(stoneImageUrl)) {
+    return stoneImageUrl;
+  }
+
+  const localTextureUrl = resolveLocalStoneTexture(stoneName);
+  if (localTextureUrl && isSupportedStoneTexturePath(localTextureUrl)) {
+    return localTextureUrl;
+  }
+
+  return null;
+}
+
+function isPowerOfTwo(value: number) {
+  return value > 0 && (value & (value - 1)) === 0;
+}
+
+function createPowerOfTwoTexture(source: THREE.Texture) {
+  const image = source.image as HTMLImageElement | ImageBitmap | undefined;
+  if (!image?.width || !image?.height || (isPowerOfTwo(image.width) && isPowerOfTwo(image.height))) {
+    return source;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 1024;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return source;
+
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.name = `${source.name || 'stone-texture'}-pot`;
+  source.dispose();
+  return texture;
 }
 
 function configureTexture(t: THREE.Texture, repeatX = 2.2, repeatY = 1.3) {
-  t.wrapS = THREE.RepeatWrapping;
-  t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(repeatX, repeatY);
+  const image = t.image as HTMLImageElement | ImageBitmap | undefined;
+  const width = image?.width ?? 0;
+  const height = image?.height ?? 0;
+  const canRepeat = isPowerOfTwo(width) && isPowerOfTwo(height);
+
+  t.wrapS = canRepeat ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+  t.wrapT = canRepeat ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+  t.repeat.set(canRepeat ? repeatX : 1, canRepeat ? repeatY : 1);
+  t.generateMipmaps = canRepeat;
+  t.minFilter = canRepeat ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
+  t.magFilter = THREE.LinearFilter;
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 8;
   t.needsUpdate = true;
@@ -174,13 +213,44 @@ function useSafeTexture(textureUrl: string | null) {
     const loader = new THREE.TextureLoader();
     loader.load(
       textureUrl,
-      (t) => { if (!active) { t.dispose(); return; } configureTexture(t); setTexture(t); },
+      (t) => {
+        if (!active) { t.dispose(); return; }
+
+        const renderableTexture = createPowerOfTwoTexture(t);
+        configureTexture(renderableTexture);
+        setTexture(renderableTexture);
+      },
       undefined,
       () => { if (active) setTexture(null); },
     );
-    return () => { active = false; setTexture(null); };
+    return () => {
+      active = false;
+      setTexture((currentTexture) => {
+        currentTexture?.dispose();
+        return null;
+      });
+    };
   }, [textureUrl]);
   return texture;
+}
+
+function useRepeatedTexture(
+  texture: THREE.Texture | null,
+  repeatX: number,
+  repeatY: number,
+) {
+  const repeatedTexture = useMemo(() => {
+    if (!texture) return null;
+
+    const clonedTexture = texture.clone();
+    clonedTexture.needsUpdate = true;
+    configureTexture(clonedTexture, repeatX, repeatY);
+    return clonedTexture;
+  }, [repeatX, repeatY, texture]);
+
+  useEffect(() => () => repeatedTexture?.dispose(), [repeatedTexture]);
+
+  return repeatedTexture;
 }
 
 // ---------------------------------------------------------------------------
@@ -216,6 +286,47 @@ function StoneMaterial({
       reflectivity={profile.reflectivity}
       envMapIntensity={1.4}
     />
+  );
+}
+
+function StonePhotoSurface({
+  texture,
+  width,
+  height,
+  repeatX,
+  repeatY,
+  position,
+  rotation,
+}: {
+  texture: THREE.Texture | null;
+  width: number;
+  height: number;
+  repeatX: number;
+  repeatY: number;
+  position: [number, number, number];
+  rotation?: [number, number, number];
+}) {
+  const repeatedTexture = useRepeatedTexture(texture, repeatX, repeatY);
+
+  if (!repeatedTexture) return null;
+
+  return (
+    <mesh position={position} rotation={rotation}>
+      <planeGeometry args={[width, height]} />
+      <meshPhysicalMaterial
+        map={repeatedTexture}
+        color="#ffffff"
+        roughness={0.34}
+        metalness={0.02}
+        clearcoat={0.42}
+        clearcoatRoughness={0.2}
+        reflectivity={0.38}
+        envMapIntensity={0.5}
+        polygonOffset
+        polygonOffsetFactor={-1}
+        polygonOffsetUnits={-1}
+      />
+    </mesh>
   );
 }
 
@@ -317,140 +428,68 @@ function EdgeProfile({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Sink (cuba) — very detailed stainless steel undermount
-// ---------------------------------------------------------------------------
-
-function SinkMesh({ radius }: { radius: number }) {
-  const stainless = (
-    <meshPhysicalMaterial
-      color="#c8cece"
-      roughness={0.18}
-      metalness={0.92}
-      clearcoat={0.6}
-      clearcoatRoughness={0.14}
-      envMapIntensity={1.8}
-    />
-  );
-
-  const innerR = radius * 0.92;
-  const bowlDepth = radius * 0.58;
-
+function JoinShadow({
+  width,
+  position,
+}: {
+  width: number;
+  position: [number, number, number];
+}) {
   return (
-    <group scale={[1.38, 1, 0.84]}>
-      {/* Dark hole cutout */}
-      <mesh receiveShadow position={[0, -0.008, 0]}>
-        <cylinderGeometry args={[innerR * 0.98, innerR * 0.92, 0.016, 128]} />
-        <meshStandardMaterial color="#0a0c0d" roughness={0.96} />
-      </mesh>
-
-      {/* Stainless rim — outer */}
-      <mesh castShadow receiveShadow position={[0, 0.010, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[radius, 0.018, 24, 128]} />
-        {stainless}
-      </mesh>
-
-      {/* Stainless rim — inner bevel */}
-      <mesh castShadow receiveShadow position={[0, 0.004, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[innerR, 0.009, 16, 128]} />
-        {stainless}
-      </mesh>
-
-      {/* Bowl walls — tapered cylinder */}
-      <mesh receiveShadow position={[0, -bowlDepth / 2 - 0.010, 0]}>
-        <cylinderGeometry
-          args={[innerR * 0.96, innerR * 0.74, bowlDepth, 128, 1, true]}
-        />
-        {stainless}
-      </mesh>
-
-      {/* Bowl floor */}
-      <mesh receiveShadow position={[0, -bowlDepth - 0.010, 0]}>
-        <cylinderGeometry args={[innerR * 0.74, innerR * 0.74, 0.006, 128]} />
-        {stainless}
-      </mesh>
-
-      {/* Drain hole */}
-      <mesh position={[0, -bowlDepth - 0.012, 0]}>
-        <cylinderGeometry args={[radius * 0.12, radius * 0.10, 0.018, 48]} />
-        <meshStandardMaterial color="#1a1f20" roughness={0.9} metalness={0.3} />
-      </mesh>
-
-      {/* Drain grid cross */}
-      {[-1, 0, 1].map((i) => (
-        <mesh key={`dg-${i}`} position={[i * radius * 0.06, -bowlDepth - 0.003, 0]}>
-          <boxGeometry args={[0.004, 0.006, radius * 0.22]} />
-          <meshStandardMaterial color="#161b1d" roughness={0.7} metalness={0.5} />
-        </mesh>
-      ))}
-      {[-1, 0, 1].map((i) => (
-        <mesh key={`dgr-${i}`} position={[0, -bowlDepth - 0.003, i * radius * 0.06]}>
-          <boxGeometry args={[radius * 0.22, 0.006, 0.004]} />
-          <meshStandardMaterial color="#161b1d" roughness={0.7} metalness={0.5} />
-        </mesh>
-      ))}
-
-      {/* Water reflection glint */}
-      <mesh position={[-radius * 0.24, -bowlDepth + 0.001, -radius * 0.28]} rotation={[-Math.PI / 2, 0, -0.22]}>
-        <planeGeometry args={[radius * 0.72, radius * 0.08]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.38} depthWrite={false} />
-      </mesh>
-      <mesh position={[radius * 0.28, -bowlDepth + 0.001, radius * 0.24]} rotation={[-Math.PI / 2, 0, 0.18]}>
-        <planeGeometry args={[radius * 0.44, radius * 0.05]} />
-        <meshBasicMaterial color="#e8f0ef" transparent opacity={0.22} depthWrite={false} />
-      </mesh>
-    </group>
+    <mesh position={position}>
+      <boxGeometry args={[width, 0.006, 0.006]} />
+      <meshBasicMaterial
+        color="#191715"
+        transparent
+        opacity={0.28}
+        depthWrite={false}
+      />
+    </mesh>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Faucet (torneira) — simple but elegant
-// ---------------------------------------------------------------------------
+function WetAreaMarker({
+  width,
+  depth,
+  thickness,
+}: {
+  width: number;
+  depth: number;
+  thickness: number;
+}) {
+  const markerWidth = Math.min(width * 0.36, 0.72);
+  const markerDepth = Math.min(depth * 0.46, 0.42);
 
-function Faucet({ sinkRadius }: { sinkRadius: number }) {
-  const chrome = (
-    <meshPhysicalMaterial
-      color="#d8dddd"
-      roughness={0.08}
-      metalness={0.96}
-      clearcoat={0.9}
-      clearcoatRoughness={0.06}
-      envMapIntensity={2.0}
-    />
-  );
-
-  const r = sinkRadius;
   return (
-    <group position={[0, 0.01, -r * 0.78]}>
-      {/* Base */}
-      <mesh castShadow position={[0, 0.018, 0]}>
-        <cylinderGeometry args={[0.026, 0.032, 0.036, 32]} />
-        {chrome}
+    <group position={[width * 0.16, thickness / 2 + 0.009, depth * 0.05]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[markerWidth, markerDepth]} />
+        <meshPhysicalMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.13}
+          roughness={0.08}
+          metalness={0}
+          clearcoat={0.95}
+          clearcoatRoughness={0.05}
+          depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
+        />
       </mesh>
-      {/* Neck riser */}
-      <mesh castShadow position={[0, 0.072, 0]}>
-        <cylinderGeometry args={[0.014, 0.016, 0.072, 24]} />
-        {chrome}
-      </mesh>
-      {/* Spout arm horizontal */}
-      <mesh castShadow position={[0, 0.108, r * 0.38]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.012, 0.014, r * 0.76, 24]} />
-        {chrome}
-      </mesh>
-      {/* Spout tip */}
-      <mesh castShadow position={[0, 0.108, r * 0.76]}>
-        <cylinderGeometry args={[0.011, 0.014, 0.028, 24]} />
-        {chrome}
-      </mesh>
-      {/* Handle left */}
-      <mesh castShadow position={[-0.048, 0.09, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.008, 0.010, 0.052, 16]} />
-        {chrome}
-      </mesh>
-      {/* Handle right */}
-      <mesh castShadow position={[0.048, 0.09, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.008, 0.010, 0.052, 16]} />
-        {chrome}
+
+      <mesh
+        position={[0, 0.002, -markerDepth / 2]}
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
+        <planeGeometry args={[markerWidth * 0.82, 0.008]} />
+        <meshBasicMaterial
+          color="#2d2924"
+          transparent
+          opacity={0.18}
+          depthWrite={false}
+        />
       </mesh>
     </group>
   );
@@ -532,7 +571,6 @@ function CountertopScene({
   thickness,
   stoneName,
   stoneImageUrl,
-  sinkEnabled,
 }: ThreeDPreviewProps) {
   const resolvedTextureUrl = resolveUsableTextureUrl(stoneName, stoneImageUrl);
   const texture = useSafeTexture(resolvedTextureUrl);
@@ -542,13 +580,13 @@ function CountertopScene({
     const w = Math.min(3.6, Math.max(0.8, width || 0.8));
     const d = Math.min(1.75, Math.max(0.42, depth || 0.42));
     const t = Math.min(0.26, Math.max(0.09, thickness / 18));
-    const backsplashH = Math.min(0.46, Math.max(0.26, d * 0.30));
-    const backsplashT = Math.min(0.08, d * 0.11);
-    const skirtH = Math.min(0.38, Math.max(0.18, t * 1.8));
-    const skirtT = Math.min(0.10, d * 0.14);
-    const sinkR = Math.min(w * 0.155, d * 0.34, 0.33);
+    const edgeRadius = Math.min(0.026, Math.max(0.014, t * 0.14));
+    const backsplashH = Math.min(0.10, Math.max(0.07, d * 0.13));
+    const backsplashT = Math.min(0.065, Math.max(0.04, t * 0.36));
+    const skirtH = Math.min(0.16, Math.max(0.095, t * 0.82));
+    const skirtT = Math.min(0.065, Math.max(0.04, t * 0.36));
 
-    return { w, d, t, backsplashH, backsplashT, skirtH, skirtT, sinkR };
+    return { w, d, t, edgeRadius, backsplashH, backsplashT, skirtH, skirtT };
   }, [width, depth, thickness]);
 
   // Group Y offset so piece sits on floor
@@ -559,9 +597,6 @@ function CountertopScene({
       {/* Background */}
       <color attach="background" args={['#e8e3db']} />
       <fog attach="fog" args={['#e8e3db', 5.5, 9.0]} />
-
-      {/* Environment for PBR reflections — studio preset gives polished look */}
-      <Environment preset="studio" environmentIntensity={0.55} />
 
       {/* Key light — warm, from upper right front */}
       <directionalLight
@@ -627,12 +662,28 @@ function CountertopScene({
         <mesh castShadow receiveShadow>
           <RoundedBox
             args={[model.w, model.t, model.d]}
-            radius={0.028}
-            smoothness={6}
+            radius={model.edgeRadius}
+            smoothness={8}
           >
             <StoneMaterial stoneName={stoneName} texture={texture} />
           </RoundedBox>
         </mesh>
+
+        <StonePhotoSurface
+          texture={texture}
+          width={model.w * 0.965}
+          height={model.d * 0.92}
+          repeatX={Math.max(1.4, model.w * 1.1)}
+          repeatY={Math.max(0.9, model.d * 1.25)}
+          position={[0, model.t / 2 + 0.005, 0.006]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        />
+
+        <WetAreaMarker
+          width={model.w}
+          depth={model.d}
+          thickness={model.t}
+        />
 
         {/* Edge highlight catch-light */}
         <EdgeProfile width={model.w} depth={model.d} thickness={model.t} />
@@ -644,13 +695,13 @@ function CountertopScene({
           position={[
             0,
             model.t / 2 + model.backsplashH / 2 - 0.006,
-            -model.d / 2 + model.backsplashT / 2,
+            -model.d / 2 + model.backsplashT / 2 - 0.002,
           ]}
         >
           <RoundedBox
             args={[model.w * 0.982, model.backsplashH, model.backsplashT]}
-            radius={0.014}
-            smoothness={4}
+            radius={Math.min(0.012, model.edgeRadius * 0.65)}
+            smoothness={6}
           >
             <StoneMaterial
               stoneName={stoneName}
@@ -661,13 +712,24 @@ function CountertopScene({
           </RoundedBox>
         </mesh>
 
+        <StonePhotoSurface
+          texture={texture}
+          width={model.w * 0.95}
+          height={model.backsplashH * 0.88}
+          repeatX={Math.max(1.4, model.w)}
+          repeatY={Math.max(0.45, model.backsplashH * 1.6)}
+          position={[
+            0,
+            model.t / 2 + model.backsplashH / 2 - 0.006,
+            -model.d / 2 + model.backsplashT + 0.001,
+          ]}
+        />
+
         {/* Backsplash / countertop junction caulk line */}
-        <mesh
-          position={[0, model.t / 2 + 0.002, -model.d / 2 + model.backsplashT + 0.002]}
-        >
-          <boxGeometry args={[model.w * 0.98, 0.004, 0.004]} />
-          <meshStandardMaterial color="#d8d4cc" roughness={0.88} />
-        </mesh>
+        <JoinShadow
+          width={model.w * 0.96}
+          position={[0, model.t / 2 + 0.004, -model.d / 2 + model.backsplashT + 0.002]}
+        />
 
         {/* ── Front skirt (fascia) ── */}
         <mesh
@@ -675,14 +737,14 @@ function CountertopScene({
           receiveShadow
           position={[
             0,
-            -model.t / 2 - model.skirtH / 2 + 0.010,
-            model.d / 2 - model.skirtT / 2,
+            -model.t / 2 - model.skirtH / 2 + 0.006,
+            model.d / 2 - model.skirtT / 2 + 0.002,
           ]}
         >
           <RoundedBox
             args={[model.w * 0.988, model.skirtH, model.skirtT]}
-            radius={0.016}
-            smoothness={4}
+            radius={Math.min(0.014, model.edgeRadius * 0.72)}
+            smoothness={6}
           >
             <StoneMaterial
               stoneName={stoneName}
@@ -693,24 +755,59 @@ function CountertopScene({
           </RoundedBox>
         </mesh>
 
+        <StonePhotoSurface
+          texture={texture}
+          width={model.w * 0.96}
+          height={model.skirtH * 0.9}
+          repeatX={Math.max(1.4, model.w)}
+          repeatY={Math.max(0.5, model.skirtH * 1.8)}
+          position={[
+            0,
+            -model.t / 2 - model.skirtH / 2 + 0.006,
+            model.d / 2 + 0.001,
+          ]}
+        />
+
+        <JoinShadow
+          width={model.w * 0.95}
+          position={[0, -model.t / 2 + 0.002, model.d / 2 + 0.005]}
+        />
+
         {/* ── Rodabanca (trim strip at base of skirt) ── */}
         <mesh
           receiveShadow
           position={[
             0,
-            -model.t / 2 - model.skirtH + 0.006,
-            model.d / 2 - 0.010,
+            -model.t / 2 - model.skirtH + 0.008,
+            model.d / 2 - 0.006,
           ]}
         >
-          <RoundedBox args={[model.w * 0.986, 0.022, 0.022]} radius={0.008} smoothness={4}>
-            <meshPhysicalMaterial
-              color="#5e5c56"
-              roughness={0.52}
-              metalness={0.08}
-              clearcoat={0.22}
+          <RoundedBox
+            args={[model.w * 0.982, 0.018, 0.026]}
+            radius={0.007}
+            smoothness={5}
+          >
+            <StoneMaterial
+              stoneName={stoneName}
+              texture={texture}
+              colorOffset={-0.065}
+              roughnessOffset={0.08}
             />
           </RoundedBox>
         </mesh>
+
+        <StonePhotoSurface
+          texture={texture}
+          width={model.w * 0.95}
+          height={0.018}
+          repeatX={Math.max(1.4, model.w)}
+          repeatY={0.25}
+          position={[
+            0,
+            -model.t / 2 - model.skirtH + 0.008,
+            model.d / 2 + 0.008,
+          ]}
+        />
 
         {/* ── Procedural veins (no texture) ── */}
         {!texture && (
@@ -720,20 +817,6 @@ function CountertopScene({
             thickness={model.t}
             stoneName={stoneName}
           />
-        )}
-
-        {/* ── Sink ── */}
-        {sinkEnabled && (
-          <group
-            position={[
-              model.w * 0.18,
-              model.t / 2 + 0.004,
-              model.d * 0.06,
-            ]}
-          >
-            <SinkMesh radius={model.sinkR} />
-            <Faucet sinkRadius={model.sinkR} />
-          </group>
         )}
       </group>
 
