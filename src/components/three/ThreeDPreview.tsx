@@ -163,6 +163,10 @@ function resolveUsableTextureUrl(stoneName: string, stoneImageUrl?: string | nul
   return null;
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
 function isPowerOfTwo(value: number) {
   return value > 0 && (value & (value - 1)) === 0;
 }
@@ -392,15 +396,22 @@ function EdgeProfile({
   width,
   depth,
   thickness,
+  edgeFinishType,
 }: {
   width: number;
   depth: number;
   thickness: number;
+  edgeFinishType: NonNullable<ThreeDPreviewProps['edgeFinishType']>;
 }) {
-  // Front chamfer highlight
+  const frontHighlightHeight =
+    edgeFinishType === 'miter45' ? 0.028 : edgeFinishType === 'rounded' ? 0.014 : 0.010;
+  const frontHighlightY =
+    edgeFinishType === 'miter45' ? thickness / 2 - 0.018 : thickness / 2 - 0.003;
+  const frontHighlightOpacity =
+    edgeFinishType === 'miter45' ? 0.22 : edgeFinishType === 'rounded' ? 0.3 : 0.18;
+
   return (
     <group>
-      {/* Top front edge bevel highlight */}
       <mesh position={[0, thickness / 2 - 0.003, depth / 2 - 0.004]}>
         <boxGeometry args={[width - 0.004, 0.005, 0.010]} />
         <meshPhysicalMaterial
@@ -412,18 +423,33 @@ function EdgeProfile({
           depthWrite={false}
         />
       </mesh>
-      {/* Front face top catch-light */}
-      <mesh position={[0, thickness / 2 - 0.012, depth / 2 + 0.002]}>
-        <boxGeometry args={[width - 0.012, 0.018, 0.003]} />
+      <mesh position={[0, frontHighlightY, depth / 2 + 0.002]}>
+        <boxGeometry args={[width - 0.012, frontHighlightHeight, 0.003]} />
         <meshPhysicalMaterial
           color="#ffffff"
           transparent
-          opacity={0.18}
+          opacity={frontHighlightOpacity}
           roughness={0.08}
           clearcoat={1}
           depthWrite={false}
         />
       </mesh>
+      {edgeFinishType === 'miter45' && (
+        <mesh
+          position={[0, thickness / 2 - 0.016, depth / 2 + 0.005]}
+          rotation={[0.44, 0, 0]}
+        >
+          <boxGeometry args={[width - 0.018, 0.006, 0.036]} />
+          <meshPhysicalMaterial
+            color="#ffffff"
+            transparent
+            opacity={0.2}
+            roughness={0.12}
+            clearcoat={0.8}
+            depthWrite={false}
+          />
+        </mesh>
+      )}
     </group>
   );
 }
@@ -452,16 +478,28 @@ function WetAreaMarker({
   width,
   depth,
   thickness,
+  enabled,
+  wetAreaWidth,
+  wetAreaDepth,
+  wetAreaPosition,
 }: {
   width: number;
   depth: number;
   thickness: number;
+  enabled: boolean;
+  wetAreaWidth?: number;
+  wetAreaDepth?: number;
+  wetAreaPosition?: ThreeDPreviewProps['wetAreaPosition'];
 }) {
-  const markerWidth = Math.min(width * 0.36, 0.72);
-  const markerDepth = Math.min(depth * 0.46, 0.42);
+  if (!enabled) return null;
+
+  const markerWidth = clamp(wetAreaWidth ?? width * 0.36, width * 0.16, width * 0.62);
+  const markerDepth = clamp(wetAreaDepth ?? depth * 0.46, depth * 0.18, depth * 0.72);
+  const markerX = clamp(wetAreaPosition?.x ?? width * 0.16, -width * 0.32, width * 0.32);
+  const markerZ = clamp(wetAreaPosition?.z ?? depth * 0.05, -depth * 0.24, depth * 0.24);
 
   return (
-    <group position={[width * 0.16, thickness / 2 + 0.009, depth * 0.05]}>
+    <group position={[markerX, thickness / 2 + 0.009, markerZ]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[markerWidth, markerDepth]} />
         <meshPhysicalMaterial
@@ -571,6 +609,17 @@ function CountertopScene({
   thickness,
   stoneName,
   stoneImageUrl,
+  backsplashEnabled = true,
+  backsplashHeightCm = 8,
+  leftBacksplashEnabled = false,
+  rightBacksplashEnabled = false,
+  frontApronEnabled = true,
+  frontApronHeightCm = 12,
+  edgeFinishType = 'rounded',
+  wetAreaEnabled = true,
+  wetAreaWidth,
+  wetAreaDepth,
+  wetAreaPosition,
 }: ThreeDPreviewProps) {
   const resolvedTextureUrl = resolveUsableTextureUrl(stoneName, stoneImageUrl);
   const texture = useSafeTexture(resolvedTextureUrl);
@@ -580,14 +629,32 @@ function CountertopScene({
     const w = Math.min(3.6, Math.max(0.8, width || 0.8));
     const d = Math.min(1.75, Math.max(0.42, depth || 0.42));
     const t = Math.min(0.26, Math.max(0.09, thickness / 18));
-    const edgeRadius = Math.min(0.026, Math.max(0.014, t * 0.14));
-    const backsplashH = Math.min(0.10, Math.max(0.07, d * 0.13));
+    const edgeRadius =
+      edgeFinishType === 'straight'
+        ? 0.006
+        : edgeFinishType === 'miter45'
+          ? 0.014
+          : Math.min(0.026, Math.max(0.014, t * 0.14));
+    const backsplashH = backsplashEnabled
+      ? clamp(backsplashHeightCm / 100, 0.04, 0.18)
+      : 0;
     const backsplashT = Math.min(0.065, Math.max(0.04, t * 0.36));
-    const skirtH = Math.min(0.16, Math.max(0.095, t * 0.82));
+    const skirtH = frontApronEnabled
+      ? clamp(frontApronHeightCm / 100, 0.04, 0.24)
+      : 0;
     const skirtT = Math.min(0.065, Math.max(0.04, t * 0.36));
 
     return { w, d, t, edgeRadius, backsplashH, backsplashT, skirtH, skirtT };
-  }, [width, depth, thickness]);
+  }, [
+    backsplashEnabled,
+    backsplashHeightCm,
+    depth,
+    edgeFinishType,
+    frontApronEnabled,
+    frontApronHeightCm,
+    thickness,
+    width,
+  ]);
 
   // Group Y offset so piece sits on floor
   const groupY = model.t / 2 + model.skirtH + 0.018;
@@ -683,131 +750,224 @@ function CountertopScene({
           width={model.w}
           depth={model.d}
           thickness={model.t}
+          enabled={wetAreaEnabled}
+          wetAreaWidth={wetAreaWidth}
+          wetAreaDepth={wetAreaDepth}
+          wetAreaPosition={wetAreaPosition}
         />
 
         {/* Edge highlight catch-light */}
-        <EdgeProfile width={model.w} depth={model.d} thickness={model.t} />
+        <EdgeProfile
+          width={model.w}
+          depth={model.d}
+          thickness={model.t}
+          edgeFinishType={edgeFinishType}
+        />
 
         {/* ── Backsplash ── */}
-        <mesh
-          castShadow
-          receiveShadow
-          position={[
-            0,
-            model.t / 2 + model.backsplashH / 2 - 0.006,
-            -model.d / 2 + model.backsplashT / 2 - 0.002,
-          ]}
-        >
-          <RoundedBox
-            args={[model.w * 0.982, model.backsplashH, model.backsplashT]}
-            radius={Math.min(0.012, model.edgeRadius * 0.65)}
-            smoothness={6}
-          >
-            <StoneMaterial
-              stoneName={stoneName}
+        {backsplashEnabled && (
+          <>
+            <mesh
+              castShadow
+              receiveShadow
+              position={[
+                0,
+                model.t / 2 + model.backsplashH / 2 - 0.006,
+                -model.d / 2 + model.backsplashT / 2 - 0.002,
+              ]}
+            >
+              <RoundedBox
+                args={[model.w * 0.982, model.backsplashH, model.backsplashT]}
+                radius={Math.min(0.012, model.edgeRadius * 0.65)}
+                smoothness={6}
+              >
+                <StoneMaterial
+                  stoneName={stoneName}
+                  texture={texture}
+                  colorOffset={-0.025}
+                  roughnessOffset={0.04}
+                />
+              </RoundedBox>
+            </mesh>
+
+            <StonePhotoSurface
               texture={texture}
-              colorOffset={-0.025}
-              roughnessOffset={0.04}
+              width={model.w * 0.95}
+              height={model.backsplashH * 0.88}
+              repeatX={Math.max(1.4, model.w)}
+              repeatY={Math.max(0.35, model.backsplashH * 1.8)}
+              position={[
+                0,
+                model.t / 2 + model.backsplashH / 2 - 0.006,
+                -model.d / 2 + model.backsplashT + 0.001,
+              ]}
             />
-          </RoundedBox>
-        </mesh>
 
-        <StonePhotoSurface
-          texture={texture}
-          width={model.w * 0.95}
-          height={model.backsplashH * 0.88}
-          repeatX={Math.max(1.4, model.w)}
-          repeatY={Math.max(0.45, model.backsplashH * 1.6)}
-          position={[
-            0,
-            model.t / 2 + model.backsplashH / 2 - 0.006,
-            -model.d / 2 + model.backsplashT + 0.001,
-          ]}
-        />
+            <JoinShadow
+              width={model.w * 0.96}
+              position={[0, model.t / 2 + 0.004, -model.d / 2 + model.backsplashT + 0.002]}
+            />
+          </>
+        )}
 
-        {/* Backsplash / countertop junction caulk line */}
-        <JoinShadow
-          width={model.w * 0.96}
-          position={[0, model.t / 2 + 0.004, -model.d / 2 + model.backsplashT + 0.002]}
-        />
+        {/* ── Side backsplashes ── */}
+        {leftBacksplashEnabled && backsplashEnabled && (
+          <group
+            position={[
+              -model.w / 2 + model.backsplashT / 2 + 0.002,
+              model.t / 2 + model.backsplashH / 2 - 0.006,
+              -model.backsplashT / 2,
+            ]}
+          >
+            <RoundedBox
+              args={[model.backsplashT, model.backsplashH, model.d - model.backsplashT]}
+              radius={Math.min(0.012, model.edgeRadius * 0.6)}
+              smoothness={6}
+            >
+              <StoneMaterial
+                stoneName={stoneName}
+                texture={texture}
+                colorOffset={-0.03}
+                roughnessOffset={0.04}
+              />
+            </RoundedBox>
+            <StonePhotoSurface
+              texture={texture}
+              width={model.d - model.backsplashT * 1.4}
+              height={model.backsplashH * 0.86}
+              repeatX={Math.max(0.8, model.d)}
+              repeatY={Math.max(0.35, model.backsplashH * 1.8)}
+              position={[-model.backsplashT / 2 - 0.002, 0, model.backsplashT / 2]}
+              rotation={[0, -Math.PI / 2, 0]}
+            />
+          </group>
+        )}
+
+        {rightBacksplashEnabled && backsplashEnabled && (
+          <group
+            position={[
+              model.w / 2 - model.backsplashT / 2 - 0.002,
+              model.t / 2 + model.backsplashH / 2 - 0.006,
+              -model.backsplashT / 2,
+            ]}
+          >
+            <RoundedBox
+              args={[model.backsplashT, model.backsplashH, model.d - model.backsplashT]}
+              radius={Math.min(0.012, model.edgeRadius * 0.6)}
+              smoothness={6}
+            >
+              <StoneMaterial
+                stoneName={stoneName}
+                texture={texture}
+                colorOffset={-0.03}
+                roughnessOffset={0.04}
+              />
+            </RoundedBox>
+            <StonePhotoSurface
+              texture={texture}
+              width={model.d - model.backsplashT * 1.4}
+              height={model.backsplashH * 0.86}
+              repeatX={Math.max(0.8, model.d)}
+              repeatY={Math.max(0.35, model.backsplashH * 1.8)}
+              position={[model.backsplashT / 2 + 0.002, 0, model.backsplashT / 2]}
+              rotation={[0, Math.PI / 2, 0]}
+            />
+          </group>
+        )}
 
         {/* ── Front skirt (fascia) ── */}
-        <mesh
-          castShadow
-          receiveShadow
-          position={[
-            0,
-            -model.t / 2 - model.skirtH / 2 + 0.006,
-            model.d / 2 - model.skirtT / 2 + 0.002,
-          ]}
-        >
-          <RoundedBox
-            args={[model.w * 0.988, model.skirtH, model.skirtT]}
-            radius={Math.min(0.014, model.edgeRadius * 0.72)}
-            smoothness={6}
-          >
-            <StoneMaterial
-              stoneName={stoneName}
+        {frontApronEnabled && (
+          <>
+            <mesh
+              castShadow
+              receiveShadow
+              position={[
+                0,
+                -model.t / 2 - model.skirtH / 2 + 0.006,
+                model.d / 2 - model.skirtT / 2 + 0.002,
+              ]}
+            >
+              <RoundedBox
+                args={[model.w * 0.988, model.skirtH, model.skirtT]}
+                radius={Math.min(0.014, model.edgeRadius * 0.72)}
+                smoothness={6}
+              >
+                <StoneMaterial
+                  stoneName={stoneName}
+                  texture={texture}
+                  colorOffset={-0.045}
+                  roughnessOffset={0.06}
+                />
+              </RoundedBox>
+            </mesh>
+
+            <StonePhotoSurface
               texture={texture}
-              colorOffset={-0.045}
-              roughnessOffset={0.06}
+              width={model.w * 0.96}
+              height={model.skirtH * 0.9}
+              repeatX={Math.max(1.4, model.w)}
+              repeatY={Math.max(0.4, model.skirtH * 1.8)}
+              position={[
+                0,
+                -model.t / 2 - model.skirtH / 2 + 0.006,
+                model.d / 2 + 0.001,
+              ]}
             />
-          </RoundedBox>
-        </mesh>
 
-        <StonePhotoSurface
-          texture={texture}
-          width={model.w * 0.96}
-          height={model.skirtH * 0.9}
-          repeatX={Math.max(1.4, model.w)}
-          repeatY={Math.max(0.5, model.skirtH * 1.8)}
-          position={[
-            0,
-            -model.t / 2 - model.skirtH / 2 + 0.006,
-            model.d / 2 + 0.001,
-          ]}
-        />
+            <JoinShadow
+              width={model.w * 0.95}
+              position={[0, -model.t / 2 + 0.002, model.d / 2 + 0.005]}
+            />
 
-        <JoinShadow
-          width={model.w * 0.95}
-          position={[0, -model.t / 2 + 0.002, model.d / 2 + 0.005]}
-        />
+            {/* ── Lower front stone lip ── */}
+            <mesh
+              receiveShadow
+              position={[
+                0,
+                -model.t / 2 - model.skirtH + 0.008,
+                model.d / 2 - 0.006,
+              ]}
+            >
+              <RoundedBox
+                args={[model.w * 0.982, 0.018, 0.026]}
+                radius={0.007}
+                smoothness={5}
+              >
+                <StoneMaterial
+                  stoneName={stoneName}
+                  texture={texture}
+                  colorOffset={-0.065}
+                  roughnessOffset={0.08}
+                />
+              </RoundedBox>
+            </mesh>
 
-        {/* ── Rodabanca (trim strip at base of skirt) ── */}
-        <mesh
-          receiveShadow
-          position={[
-            0,
-            -model.t / 2 - model.skirtH + 0.008,
-            model.d / 2 - 0.006,
-          ]}
-        >
-          <RoundedBox
-            args={[model.w * 0.982, 0.018, 0.026]}
-            radius={0.007}
-            smoothness={5}
-          >
-            <StoneMaterial
-              stoneName={stoneName}
+            <StonePhotoSurface
               texture={texture}
-              colorOffset={-0.065}
-              roughnessOffset={0.08}
+              width={model.w * 0.95}
+              height={0.018}
+              repeatX={Math.max(1.4, model.w)}
+              repeatY={0.25}
+              position={[
+                0,
+                -model.t / 2 - model.skirtH + 0.008,
+                model.d / 2 + 0.008,
+              ]}
             />
-          </RoundedBox>
-        </mesh>
+          </>
+        )}
 
-        <StonePhotoSurface
-          texture={texture}
-          width={model.w * 0.95}
-          height={0.018}
-          repeatX={Math.max(1.4, model.w)}
-          repeatY={0.25}
-          position={[
-            0,
-            -model.t / 2 - model.skirtH + 0.008,
-            model.d / 2 + 0.008,
-          ]}
-        />
+        {!frontApronEnabled && (
+          <mesh position={[0, -model.t / 2 + 0.002, model.d / 2 + 0.003]}>
+            <boxGeometry args={[model.w * 0.94, 0.004, 0.004]} />
+            <meshBasicMaterial
+              color="#ffffff"
+              transparent
+              opacity={0.16}
+              depthWrite={false}
+            />
+          </mesh>
+        )}
 
         {/* ── Procedural veins (no texture) ── */}
         {!texture && (
