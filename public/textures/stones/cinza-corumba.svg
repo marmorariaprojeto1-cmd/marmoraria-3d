@@ -1,26 +1,150 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
     <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#777a75"/>
-      <stop offset=".5" stop-color="#9a9b94"/>
-      <stop offset="1" stop-color="#666963"/>
+      <stop offset="0" stop-color="#7e8180"/>
+      <stop offset="0.38" stop-color="#9a9d9a"/>
+      <stop offset="0.70" stop-color="#767978"/>
+      <stop offset="1" stop-color="#888b88"/>
     </linearGradient>
-    <radialGradient id="ash" cx=".7" cy=".28" r=".74">
-      <stop offset="0" stop-color="#c9c8bd" stop-opacity=".36"/>
-      <stop offset=".52" stop-color="#898b84" stop-opacity=".2"/>
-      <stop offset="1" stop-color="#5a5d58" stop-opacity="0"/>
+    <radialGradient id="g1" cx="0.30" cy="0.24" r="0.65">
+      <stop offset="0" stop-color="#c4c8c6" stop-opacity="0.30"/>
+      <stop offset="0.60" stop-color="#9ea2a0" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#767878" stop-opacity="0"/>
     </radialGradient>
+    <radialGradient id="g2" cx="0.76" cy="0.72" r="0.58">
+      <stop offset="0" stop-color="#b0b4b2" stop-opacity="0.24"/>
+      <stop offset="0.65" stop-color="#8c9090" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#747878" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="cool" cx="0.50" cy="0.50" r="0.75">
+      <stop offset="0" stop-color="#d8dede" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#808484" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur1" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5.0"/>
+    </filter>
+    <filter id="blur2" x="-8%" y="-8%" width="116%" height="116%">
+      <feGaussianBlur stdDeviation="2.0"/>
+    </filter>
+    <filter id="blur3" x="-4%" y="-4%" width="108%" height="108%">
+      <feGaussianBlur stdDeviation="0.9"/>
+    </filter>
   </defs>
-  <rect width="512" height="512" fill="url(#base)"/>
-  <rect width="512" height="512" fill="url(#ash)"/>
-  <path d="M-48 124 C70 74 176 152 286 100 S430 72 560 96" fill="none" stroke="#4d504c" stroke-width="8" opacity=".25"/>
-  <path d="M-32 270 C110 206 230 304 352 244 S468 204 556 250" fill="none" stroke="#c9c9c0" stroke-width="22" opacity=".28"/>
-  <path d="M-20 412 C120 330 232 428 350 358 S466 310 558 346" fill="none" stroke="#5e625c" stroke-width="7" opacity=".25"/>
-  <path d="M40 510 C154 430 278 468 378 410 S482 360 552 384" fill="none" stroke="#afb0a8" stroke-width="10" opacity=".2"/>
-  <g fill="#d4d4cc" opacity=".25">
-    <circle cx="82" cy="220" r="2.5"/>
-    <circle cx="190" cy="354" r="2.8"/>
-    <circle cx="318" cy="132" r="2.1"/>
-    <circle cx="430" cy="314" r="2.6"/>
+
+  <rect width="1024" height="1024" fill="url(#base)"/>
+  <rect width="1024" height="1024" fill="url(#g1)"/>
+  <rect width="1024" height="1024" fill="url(#g2)"/>
+  <rect width="1024" height="1024" fill="url(#cool)"/>
+
+  <!-- Broad tonal flow bands -->
+  <path d="M-80 140 C200 100 400 190 660 140 S900 90 1120 72" fill="none" stroke="#6e7270" stroke-width="70" opacity="0.44" filter="url(#blur1)"/>
+  <path d="M-80 380 C180 320 400 420 680 360 S920 300 1120 278" fill="none" stroke="#c0c4c2" stroke-width="55" opacity="0.28" filter="url(#blur1)"/>
+  <path d="M-80 620 C200 540 440 650 720 580 S960 530 1120 500" fill="none" stroke="#707474" stroke-width="78" opacity="0.40" filter="url(#blur1)"/>
+  <path d="M-80 860 C220 778 460 868 740 800 S970 748 1120 720" fill="none" stroke="#b8bcba" stroke-width="60" opacity="0.26" filter="url(#blur1)"/>
+
+  <!-- White quartz veins — Corumbá character -->
+  <path d="M-80 60 C160 80 340 52 560 80 S820 108 1120 84" fill="none" stroke="#d4d8d6" stroke-width="16" opacity="0.42" filter="url(#blur2)"/>
+  <path d="M-80 240 C180 268 380 236 620 268 S880 296 1120 272" fill="none" stroke="#c8ccca" stroke-width="9" opacity="0.36"/>
+  <path d="M-80 490 C200 516 420 484 680 512 S920 540 1120 516" fill="none" stroke="#dce0de" stroke-width="22" opacity="0.38" filter="url(#blur2)"/>
+  <path d="M-80 720 C200 742 440 714 720 740 S960 764 1120 748" fill="none" stroke="#ccd0ce" stroke-width="12" opacity="0.34"/>
+  <path d="M-80 950 C200 970 440 944 720 972 S960 994 1120 978" fill="none" stroke="#d8dcda" stroke-width="7" opacity="0.30"/>
+
+  <!-- Dark gray veins -->
+  <path d="M-80 110 C160 128 360 104 580 128 S840 152 1120 136" fill="none" stroke="#484c4a" stroke-width="7" opacity="0.28"/>
+  <path d="M-80 320 C180 340 400 316 640 340 S880 364 1120 348" fill="none" stroke="#545856" stroke-width="5" opacity="0.24"/>
+  <path d="M-80 560 C200 578 440 554 700 578 S940 602 1120 588" fill="none" stroke="#4a4e4c" stroke-width="9" opacity="0.26"/>
+  <path d="M-80 800 C220 818 460 796 740 818 S970 842 1120 828" fill="none" stroke="#505454" stroke-width="6" opacity="0.22"/>
+
+  <!-- Fine hairlines -->
+  <path d="M-60 28 C120 40 300 24 500 40 S740 60 1000 44" fill="none" stroke="#e0e4e2" stroke-width="2.0" opacity="0.32"/>
+  <path d="M-60 180 C140 192 340 176 560 192 S800 208 1060 196" fill="none" stroke="#c4c8c6" stroke-width="1.6" opacity="0.28"/>
+  <path d="M-60 430 C160 444 380 428 620 444 S860 458 1060 448" fill="none" stroke="#d8dcda" stroke-width="2.4" opacity="0.30"/>
+  <path d="M-60 660 C180 674 400 660 640 674 S880 688 1060 678" fill="none" stroke="#c0c4c2" stroke-width="1.8" opacity="0.26"/>
+  <path d="M-60 900 C180 912 400 898 640 912 S880 924 1060 916" fill="none" stroke="#ccd0ce" stroke-width="2.2" opacity="0.28"/>
+
+  <!-- Diagonal vertical hairlines -->
+  <path d="M200 0 C210 160 220 320 232 512 S248 700 260 1024" fill="none" stroke="#b0b4b2" stroke-width="1.4" opacity="0.22"/>
+  <path d="M480 0 C492 160 504 320 516 512 S530 700 542 1024" fill="none" stroke="#c4c8c6" stroke-width="1.0" opacity="0.20"/>
+  <path d="M760 0 C772 160 784 320 796 512 S810 700 822 1024" fill="none" stroke="#b8bcba" stroke-width="1.6" opacity="0.22"/>
+
+  <!-- Light feldspar patches — cool gray-white -->
+  <g filter="url(#blur2)">
+    <ellipse cx="108" cy="180" rx="30" ry="12" fill="#e0e4e2" opacity="0.45" transform="rotate(-24 108 180)"/>
+    <ellipse cx="302" cy="96" rx="22" ry="9" fill="#d8dcda" opacity="0.40" transform="rotate(38 302 96)"/>
+    <ellipse cx="498" cy="252" rx="28" ry="11" fill="#e4e8e6" opacity="0.42" transform="rotate(-50 498 252)"/>
+    <ellipse cx="688" cy="124" rx="26" ry="10" fill="#dce0de" opacity="0.44" transform="rotate(22 688 124)"/>
+    <ellipse cx="880" cy="220" rx="20" ry="8" fill="#e0e4e2" opacity="0.40" transform="rotate(-36 880 220)"/>
+    <ellipse cx="168" cy="440" rx="24" ry="10" fill="#d8dcda" opacity="0.44" transform="rotate(52 168 440)"/>
+    <ellipse cx="388" cy="500" rx="30" ry="12" fill="#e4e8e6" opacity="0.42" transform="rotate(-18 388 500)"/>
+    <ellipse cx="588" cy="420" rx="22" ry="9" fill="#dce0de" opacity="0.46" transform="rotate(44 588 420)"/>
+    <ellipse cx="780" cy="500" rx="26" ry="10" fill="#e0e4e2" opacity="0.40" transform="rotate(-60 780 500)"/>
+    <ellipse cx="940" cy="420" rx="20" ry="8" fill="#d8dcda" opacity="0.44" transform="rotate(28 940 420)"/>
+    <ellipse cx="96" cy="680" rx="28" ry="11" fill="#e4e8e6" opacity="0.42" transform="rotate(-42 96 680)"/>
+    <ellipse cx="304" cy="760" rx="24" ry="10" fill="#dce0de" opacity="0.46" transform="rotate(16 304 760)"/>
+    <ellipse cx="508" cy="680" rx="30" ry="12" fill="#e0e4e2" opacity="0.40" transform="rotate(-56 508 680)"/>
+    <ellipse cx="708" cy="780" rx="22" ry="9" fill="#d8dcda" opacity="0.44" transform="rotate(40 708 780)"/>
+    <ellipse cx="908" cy="700" rx="26" ry="10" fill="#e4e8e6" opacity="0.42" transform="rotate(-26 908 700)"/>
+    <ellipse cx="200" cy="920" rx="20" ry="8" fill="#dce0de" opacity="0.46" transform="rotate(54 200 920)"/>
+    <ellipse cx="540" cy="940" rx="28" ry="11" fill="#e0e4e2" opacity="0.40" transform="rotate(-14 540 940)"/>
+    <ellipse cx="820" cy="920" rx="24" ry="10" fill="#d8dcda" opacity="0.44" transform="rotate(46 820 920)"/>
+  </g>
+
+  <!-- Dark biotite clusters -->
+  <g filter="url(#blur3)" opacity="0.55">
+    <ellipse cx="72" cy="128" rx="10" ry="4" fill="#3a3c3a" transform="rotate(20 72 128)"/>
+    <ellipse cx="188" cy="256" rx="13" ry="5.2" fill="#2e3030" transform="rotate(-38 188 256)"/>
+    <ellipse cx="332" cy="152" rx="9" ry="3.6" fill="#424444" transform="rotate(56 332 152)"/>
+    <ellipse cx="476" cy="284" rx="12" ry="4.8" fill="#363838" transform="rotate(-20 476 284)"/>
+    <ellipse cx="620" cy="160" rx="10" ry="4" fill="#3a3c3a" transform="rotate(44 620 160)"/>
+    <ellipse cx="764" cy="280" rx="13" ry="5.2" fill="#2e3030" transform="rotate(-58 764 280)"/>
+    <ellipse cx="908" cy="156" rx="9" ry="3.6" fill="#424444" transform="rotate(28 908 156)"/>
+    <ellipse cx="128" cy="412" rx="12" ry="4.8" fill="#363838" transform="rotate(-44 128 412)"/>
+    <ellipse cx="270" cy="532" rx="10" ry="4" fill="#3a3c3a" transform="rotate(60 270 532)"/>
+    <ellipse cx="420" cy="428" rx="13" ry="5.2" fill="#2e3030" transform="rotate(-24 420 428)"/>
+    <ellipse cx="568" cy="536" rx="9" ry="3.6" fill="#424444" transform="rotate(40 568 536)"/>
+    <ellipse cx="716" cy="432" rx="12" ry="4.8" fill="#363838" transform="rotate(-54 716 432)"/>
+    <ellipse cx="864" cy="528" rx="10" ry="4" fill="#3a3c3a" transform="rotate(22 864 528)"/>
+    <ellipse cx="60" cy="668" rx="13" ry="5.2" fill="#2e3030" transform="rotate(-36 60 668)"/>
+    <ellipse cx="208" cy="788" rx="9" ry="3.6" fill="#424444" transform="rotate(52 208 788)"/>
+    <ellipse cx="356" cy="680" rx="12" ry="4.8" fill="#363838" transform="rotate(-18 356 680)"/>
+    <ellipse cx="504" cy="784" rx="10" ry="4" fill="#3a3c3a" transform="rotate(46 504 784)"/>
+    <ellipse cx="652" cy="680" rx="13" ry="5.2" fill="#2e3030" transform="rotate(-60 652 680)"/>
+    <ellipse cx="800" cy="784" rx="9" ry="3.6" fill="#424444" transform="rotate(30 800 784)"/>
+    <ellipse cx="948" cy="680" rx="12" ry="4.8" fill="#363838" transform="rotate(-42 948 680)"/>
+    <ellipse cx="108" cy="924" rx="10" ry="4" fill="#3a3c3a" transform="rotate(56 108 924)"/>
+    <ellipse cx="456" cy="944" rx="13" ry="5.2" fill="#2e3030" transform="rotate(-26 456 944)"/>
+    <ellipse cx="764" cy="924" rx="9" ry="3.6" fill="#424444" transform="rotate(48 764 924)"/>
+  </g>
+
+  <!-- White quartz sparkle -->
+  <g fill="#f0f4f2" opacity="0.58">
+    <circle cx="80" cy="74" r="2.0"/>
+    <circle cx="224" cy="196" r="1.6"/>
+    <circle cx="360" cy="78" r="1.8"/>
+    <circle cx="500" cy="200" r="2.0"/>
+    <circle cx="640" cy="80" r="1.6"/>
+    <circle cx="780" cy="196" r="1.8"/>
+    <circle cx="920" cy="76" r="2.0"/>
+    <circle cx="136" cy="356" r="1.6"/>
+    <circle cx="280" cy="470" r="1.8"/>
+    <circle cx="416" cy="360" r="2.0"/>
+    <circle cx="556" cy="472" r="1.6"/>
+    <circle cx="696" cy="360" r="1.8"/>
+    <circle cx="836" cy="472" r="2.0"/>
+    <circle cx="972" cy="360" r="1.6"/>
+    <circle cx="88" cy="600" r="1.8"/>
+    <circle cx="232" cy="716" r="2.0"/>
+    <circle cx="368" cy="600" r="1.6"/>
+    <circle cx="508" cy="716" r="1.8"/>
+    <circle cx="648" cy="600" r="2.0"/>
+    <circle cx="788" cy="716" r="1.6"/>
+    <circle cx="928" cy="600" r="1.8"/>
+    <circle cx="144" cy="856" r="2.0"/>
+    <circle cx="288" cy="972" r="1.6"/>
+    <circle cx="424" cy="860" r="1.8"/>
+    <circle cx="564" cy="976" r="2.0"/>
+    <circle cx="704" cy="860" r="1.6"/>
+    <circle cx="844" cy="976" r="1.8"/>
+    <circle cx="984" cy="860" r="2.0"/>
   </g>
 </svg>
