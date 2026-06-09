@@ -7,6 +7,7 @@ const adminNavItems = [
   { to: '/admin/cubas', label: 'Cubas' },
   { to: '/admin/acabamentos', label: 'Acabamentos' },
   { to: '/admin/produtos', label: 'Produtos' },
+  { to: '/admin/produtos-comerciais', label: 'Produtos Comerciais' },
   { to: '/admin/configuracoes', label: 'Configurações' },
 ];
 

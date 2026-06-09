@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ProtectedAdminPage } from './pages/AdminPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import { CommercialProductsPage } from './pages/admin/CommercialProductsPage';
 import { CompanySettingsPage } from './pages/admin/CompanySettingsPage';
 import { FinishesPage } from './pages/admin/FinishesPage';
 import { OrdersPage } from './pages/admin/OrdersPage';
@@ -61,6 +62,10 @@ export const router = createBrowserRouter([
           {
             path: 'produtos',
             element: <ProductsPage />,
+          },
+          {
+            path: 'produtos-comerciais',
+            element: <CommercialProductsPage />,
           },
           {
             path: 'configuracoes',
