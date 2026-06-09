@@ -16,7 +16,7 @@ export type ProductConfigurationInput = {
 
 export type ProductConfiguration = {
   product: CommercialProduct;
-  stone: CommercialStone;
+  stoneId: string;
   composition: CountertopComposition;
   dimensions: CommercialProductDimensions;
   estimatedAreaM2: number;
@@ -107,7 +107,7 @@ export function buildProductConfiguration({
 
   return {
     product,
-    stone,
+    stoneId: stone.id,
     composition,
     dimensions,
     estimatedAreaM2: buildProductArea(dimensions.width, dimensions.depth),
