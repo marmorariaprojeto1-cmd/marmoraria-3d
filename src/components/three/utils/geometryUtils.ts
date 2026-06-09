@@ -67,6 +67,22 @@ export function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+export function insetCenterFromFront(depth: number, pieceDepth: number) {
+  return depth / 2 - pieceDepth / 2;
+}
+
+export function insetCenterFromBack(depth: number, pieceDepth: number) {
+  return -depth / 2 + pieceDepth / 2;
+}
+
+export function insetCenterFromLeft(width: number, pieceWidth: number) {
+  return -width / 2 + pieceWidth / 2;
+}
+
+export function insetCenterFromRight(width: number, pieceWidth: number) {
+  return width / 2 - pieceWidth / 2;
+}
+
 export function resolveEdgeFinishVisualType(value: unknown): EdgeFinishVisualType {
   if (
     value === 'straight' ||

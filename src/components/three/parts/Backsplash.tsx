@@ -1,6 +1,7 @@
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { JoinShadow } from './EdgeFinish';
+import { insetCenterFromBack } from '../utils/geometryUtils';
 import { StoneMaterial, StonePhotoSurface } from '../utils/stoneMaterials';
 
 type BacksplashProps = {
@@ -24,6 +25,9 @@ export function Backsplash({
   stoneName,
   texture,
 }: BacksplashProps) {
+  const backsplashCenterZ = insetCenterFromBack(depth, backsplashThickness);
+  const backsplashInnerFaceZ = -depth / 2 + backsplashThickness;
+
   return (
     <>
       <mesh
@@ -32,7 +36,7 @@ export function Backsplash({
         position={[
           0,
           thickness / 2 + backsplashHeight / 2 - 0.006,
-          -depth / 2 + backsplashThickness / 2 - 0.002,
+          backsplashCenterZ,
         ]}
       >
         <RoundedBox
@@ -51,14 +55,14 @@ export function Backsplash({
 
       <StonePhotoSurface
         texture={texture}
-        width={width * 0.95}
-        height={backsplashHeight * 0.88}
+        width={width * 0.995}
+        height={backsplashHeight * 0.98}
         repeatX={Math.max(1.4, width)}
         repeatY={Math.max(0.35, backsplashHeight * 1.8)}
         position={[
           0,
           thickness / 2 + backsplashHeight / 2 - 0.006,
-          -depth / 2 + backsplashThickness + 0.001,
+          backsplashInnerFaceZ,
         ]}
       />
 
@@ -67,7 +71,7 @@ export function Backsplash({
         position={[
           0,
           thickness / 2 + 0.004,
-          -depth / 2 + backsplashThickness + 0.002,
+          backsplashInnerFaceZ + 0.003,
         ]}
       />
     </>

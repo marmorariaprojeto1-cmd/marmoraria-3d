@@ -2,9 +2,10 @@ import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import {
   edgeFinishConfigs,
+  insetCenterFromFront,
   type EdgeFinishVisualType,
 } from '../utils/geometryUtils';
-import { StonePhysicalMaterial } from '../utils/stoneMaterials';
+import { StonePhotoSurface, StonePhysicalMaterial } from '../utils/stoneMaterials';
 
 type StoneEdgeProps = {
   width: number;
@@ -64,18 +65,20 @@ function BullnoseFrontEdge({
   stoneName,
   texture,
 }: StoneEdgeProps) {
+  const radius = thickness * 0.52;
+
   return (
     <mesh
       castShadow
       receiveShadow
-      position={[0, 0, depth / 2 + thickness * 0.11]}
+      position={[0, 0, insetCenterFromFront(depth, radius * 2)]}
       rotation={[0, 0, Math.PI / 2]}
       scale={[1, 0.46, 1]}
     >
       <cylinderGeometry
         args={[
-          thickness * 0.52,
-          thickness * 0.52,
+          radius,
+          radius,
           width * 0.986,
           36,
           1,
@@ -97,23 +100,28 @@ function HalfBullnoseFrontEdge({
   texture,
 }: StoneEdgeProps) {
   const radius = Math.min(0.034, Math.max(0.022, thickness * 0.22));
+  const profileDepth = radius * 1.16;
 
   return (
     <group>
       <mesh
         castShadow
         receiveShadow
-        position={[0, thickness / 2 - radius * 0.52, depth / 2 + radius * 0.16]}
+        position={[
+          0,
+          thickness / 2 - radius * 0.52,
+          insetCenterFromFront(depth, profileDepth),
+        ]}
       >
         <RoundedBox
-          args={[width * 0.986, radius * 1.16, radius * 1.16]}
+          args={[width * 0.986, radius * 1.16, profileDepth]}
           radius={radius * 0.46}
           smoothness={10}
         >
           <StoneEdgeMaterial stoneName={stoneName} texture={texture} />
         </RoundedBox>
       </mesh>
-      <mesh position={[0, -thickness * 0.07, depth / 2 + 0.004]}>
+      <mesh position={[0, -thickness * 0.07, insetCenterFromFront(depth, 0.004)]}>
         <boxGeometry args={[width * 0.972, thickness * 0.78, 0.004]} />
         <meshBasicMaterial
           color="#151311"
@@ -133,15 +141,22 @@ function Miter45FrontEdge({
   stoneName,
   texture,
 }: StoneEdgeProps) {
+  const miterDepth = thickness * 0.18;
+  const miterRotatedDepthAllowance = thickness * 0.52;
+
   return (
     <group>
       <mesh
         castShadow
         receiveShadow
-        position={[0, -thickness * 0.05, depth / 2 + thickness * 0.13]}
+        position={[
+          0,
+          -thickness * 0.05,
+          depth / 2 - miterRotatedDepthAllowance / 2,
+        ]}
         rotation={[-0.38, 0, 0]}
       >
-        <boxGeometry args={[width * 0.986, thickness * 0.94, thickness * 0.18]} />
+        <boxGeometry args={[width * 0.986, thickness * 0.94, miterDepth]} />
         <StoneEdgeMaterial
           stoneName={stoneName}
           texture={texture}
@@ -150,14 +165,14 @@ function Miter45FrontEdge({
       </mesh>
       <JoinShadow
         width={width * 0.955}
-        position={[0, thickness / 2 - 0.006, depth / 2 + thickness * 0.02]}
+        position={[0, thickness / 2 - 0.006, insetCenterFromFront(depth, 0.006)]}
       />
-      <mesh position={[0, -thickness / 2 + 0.008, depth / 2 + thickness * 0.23]}>
+      <mesh position={[0, -thickness / 2 + 0.008, insetCenterFromFront(depth, 0.004)]}>
         <boxGeometry args={[width * 0.95, 0.005, 0.004]} />
         <meshBasicMaterial
-          color="#ffffff"
+          color="#f7f3ea"
           transparent
-          opacity={0.16}
+          opacity={0.08}
           depthWrite={false}
         />
       </mesh>
@@ -172,16 +187,16 @@ function StraightFrontEdge({
 }: Pick<StoneEdgeProps, 'width' | 'thickness' | 'depth'>) {
   return (
     <group>
-      <mesh position={[0, thickness / 2 - 0.004, depth / 2 + 0.004]}>
+      <mesh position={[0, thickness / 2 - 0.004, insetCenterFromFront(depth, 0.004)]}>
         <boxGeometry args={[width * 0.962, 0.004, 0.004]} />
         <meshBasicMaterial
-          color="#ffffff"
+          color="#f7f3ea"
           transparent
-          opacity={0.18}
+          opacity={0.08}
           depthWrite={false}
         />
       </mesh>
-      <mesh position={[0, -thickness / 2 + 0.006, depth / 2 + 0.004]}>
+      <mesh position={[0, -thickness / 2 + 0.006, insetCenterFromFront(depth, 0.004)]}>
         <boxGeometry args={[width * 0.948, 0.004, 0.004]} />
         <meshBasicMaterial
           color="#1b1714"
@@ -263,23 +278,20 @@ export function EdgeFinish({
         texture={texture}
         edgeFinishType={edgeFinishType}
       />
-      <mesh position={[0, thickness / 2 - 0.003, depth / 2 - 0.004]}>
-        <boxGeometry args={[width - 0.004, config.topHighlightHeight, 0.010]} />
-        <meshPhysicalMaterial
-          color="#ffffff"
-          transparent
-          opacity={edgeFinishType === 'straight' ? 0.18 : 0.28}
-          roughness={0.05}
-          clearcoat={1}
-          depthWrite={false}
-        />
-      </mesh>
-      <mesh position={[0, frontHighlightY, depth / 2 + 0.002]}>
+      <StonePhotoSurface
+        texture={texture}
+        width={width * 0.995}
+        height={thickness * 0.94}
+        repeatX={Math.max(1.4, width)}
+        repeatY={Math.max(0.35, thickness * 2.4)}
+        position={[0, 0, depth / 2]}
+      />
+      <mesh position={[0, frontHighlightY, insetCenterFromFront(depth, 0.003)]}>
         <boxGeometry args={[width - 0.012, config.faceHighlightHeight, 0.003]} />
         <meshPhysicalMaterial
-          color="#ffffff"
+          color="#f7f3ea"
           transparent
-          opacity={config.faceHighlightOpacity}
+          opacity={config.faceHighlightOpacity * 0.45}
           roughness={0.08}
           clearcoat={1}
           depthWrite={false}

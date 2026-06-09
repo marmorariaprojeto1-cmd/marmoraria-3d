@@ -1,5 +1,9 @@
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
+import {
+  insetCenterFromLeft,
+  insetCenterFromRight,
+} from '../utils/geometryUtils';
 import { StoneMaterial, StonePhotoSurface } from '../utils/stoneMaterials';
 
 type SideBacksplashProps = {
@@ -26,13 +30,15 @@ export function SideBacksplash({
   texture,
 }: SideBacksplashProps) {
   const isLeft = side === 'left';
+  const sideCenterX = isLeft
+    ? insetCenterFromLeft(width, backsplashThickness)
+    : insetCenterFromRight(width, backsplashThickness);
+  const sideOuterFaceX = isLeft ? -backsplashThickness / 2 : backsplashThickness / 2;
 
   return (
     <group
       position={[
-        isLeft
-          ? -width / 2 + backsplashThickness / 2 + 0.002
-          : width / 2 - backsplashThickness / 2 - 0.002,
+        sideCenterX,
         thickness / 2 + backsplashHeight / 2 - 0.006,
         -backsplashThickness / 2,
       ]}
@@ -51,12 +57,12 @@ export function SideBacksplash({
       </RoundedBox>
       <StonePhotoSurface
         texture={texture}
-        width={depth - backsplashThickness * 1.4}
-        height={backsplashHeight * 0.86}
+        width={depth - backsplashThickness}
+        height={backsplashHeight * 0.98}
         repeatX={Math.max(0.8, depth)}
         repeatY={Math.max(0.35, backsplashHeight * 1.8)}
         position={[
-          isLeft ? -backsplashThickness / 2 - 0.002 : backsplashThickness / 2 + 0.002,
+          sideOuterFaceX,
           0,
           backsplashThickness / 2,
         ]}

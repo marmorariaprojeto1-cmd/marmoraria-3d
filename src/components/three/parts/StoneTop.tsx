@@ -81,11 +81,11 @@ export function StoneTop({
 
       <StonePhotoSurface
         texture={texture}
-        width={width * 0.965}
-        height={depth * 0.92}
+        width={width}
+        height={depth}
         repeatX={Math.max(1.4, width * 1.1)}
         repeatY={Math.max(0.9, depth * 1.25)}
-        position={[0, thickness / 2 + 0.005, 0.006]}
+        position={[0, thickness / 2 + 0.005, 0]}
         rotation={[-Math.PI / 2, 0, 0]}
       />
 

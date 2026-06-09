@@ -4,11 +4,12 @@ import type {
   ThreeDPreviewProps,
 } from '../types/threePreview';
 
-const fullBacksplashComposition: CountertopComposition = {
-  id: 'preview-frontao-10cm-com-saia',
+const top30Backsplash50Apron40Composition: CountertopComposition = {
+  id: 'preview-component-002-021-031',
   version: 1,
   top: {
-    componentId: 'COMPONENT_001',
+    id: 'COMPONENT_002',
+    componentId: 'COMPONENT_002',
     type: 'straight_top_30mm',
     width: 2.4,
     depth: 0.7,
@@ -20,21 +21,23 @@ const fullBacksplashComposition: CountertopComposition = {
     localTextureKey: 'branco-siena',
   },
   backsplash: {
-    componentId: 'COMPONENT_022',
+    id: 'COMPONENT_021',
+    componentId: 'COMPONENT_021',
     type: 'back_backsplash',
     enabled: true,
-    heightMm: 100,
+    heightMm: 50,
     leftEnabled: true,
     rightEnabled: true,
   },
   frontApron: {
-    componentId: 'COMPONENT_032',
+    id: 'COMPONENT_031',
+    componentId: 'COMPONENT_031',
     type: 'front_apron',
     enabled: true,
-    heightMm: 120,
+    heightMm: 40,
   },
   edgeFinish: {
-    type: 'rounded',
+    type: 'straight',
   },
   wetArea: {
     componentId: 'COMPONENT_010',
@@ -46,7 +49,146 @@ const fullBacksplashComposition: CountertopComposition = {
   },
   metadata: {
     source: 'preview-3d',
-    notes: 'Primeiro CountertopComposition real do modulo 3D.',
+    notes: 'COMPONENT_002 + COMPONENT_021 + COMPONENT_031.',
+  },
+};
+
+const top30Backsplash100Apron60Composition: CountertopComposition = {
+  id: 'preview-component-002-022-032',
+  version: 1,
+  top: {
+    id: 'COMPONENT_002',
+    componentId: 'COMPONENT_002',
+    type: 'straight_top_30mm',
+    width: 2.5,
+    depth: 0.72,
+    thicknessMm: 30,
+  },
+  material: {
+    stoneName: 'Preto São Gabriel',
+    stoneImageUrl: null,
+    localTextureKey: 'preto-sao-gabriel',
+  },
+  backsplash: {
+    id: 'COMPONENT_022',
+    componentId: 'COMPONENT_022',
+    type: 'back_backsplash',
+    enabled: true,
+    heightMm: 100,
+    leftEnabled: true,
+    rightEnabled: false,
+  },
+  frontApron: {
+    id: 'COMPONENT_032',
+    componentId: 'COMPONENT_032',
+    type: 'front_apron',
+    enabled: true,
+    heightMm: 60,
+  },
+  edgeFinish: {
+    type: 'rounded',
+  },
+  wetArea: {
+    componentId: 'COMPONENT_010',
+    type: 'straight_wet_area',
+    enabled: true,
+    width: 0.68,
+    depth: 0.34,
+    position: { x: 0.28, z: 0.03 },
+  },
+  metadata: {
+    source: 'preview-3d',
+    notes: 'COMPONENT_002 + COMPONENT_022 + COMPONENT_032.',
+  },
+};
+
+const top30NoBacksplashNoApronComposition: CountertopComposition = {
+  id: 'preview-component-002-020-030',
+  version: 1,
+  top: {
+    id: 'COMPONENT_002',
+    componentId: 'COMPONENT_002',
+    type: 'straight_top_30mm',
+    width: 2.2,
+    depth: 0.65,
+    thicknessMm: 30,
+  },
+  material: {
+    stoneName: 'Cinza Corumbá',
+    stoneImageUrl: null,
+    localTextureKey: 'cinza-corumba',
+  },
+  backsplash: {
+    id: 'COMPONENT_020',
+    componentId: 'COMPONENT_020',
+    type: 'no_backsplash',
+    enabled: false,
+  },
+  frontApron: {
+    id: 'COMPONENT_030',
+    componentId: 'COMPONENT_030',
+    type: 'no_front_apron',
+    enabled: false,
+  },
+  edgeFinish: {
+    type: 'straight',
+  },
+  wetArea: {
+    componentId: 'COMPONENT_010',
+    type: 'straight_wet_area',
+    enabled: true,
+    width: 0.56,
+    depth: 0.3,
+    position: { x: 0.16, z: 0.02 },
+  },
+  metadata: {
+    source: 'preview-3d',
+    notes: 'COMPONENT_002 + COMPONENT_020 + COMPONENT_030.',
+  },
+};
+
+const top30Backsplash100NoApronComposition: CountertopComposition = {
+  id: 'preview-component-002-022-030',
+  version: 1,
+  top: {
+    id: 'COMPONENT_002',
+    componentId: 'COMPONENT_002',
+    type: 'straight_top_30mm',
+    width: 2.35,
+    depth: 0.68,
+    thicknessMm: 30,
+  },
+  material: {
+    stoneName: 'Branco Fortaleza',
+    stoneImageUrl: null,
+    localTextureKey: 'branco-fortaleza',
+  },
+  backsplash: {
+    id: 'COMPONENT_022',
+    componentId: 'COMPONENT_022',
+    type: 'back_backsplash',
+    enabled: true,
+    heightMm: 100,
+    leftEnabled: false,
+    rightEnabled: false,
+  },
+  frontApron: {
+    id: 'COMPONENT_030',
+    componentId: 'COMPONENT_030',
+    type: 'no_front_apron',
+    enabled: false,
+  },
+  edgeFinish: {
+    type: 'miter45',
+  },
+  wetArea: {
+    componentId: 'COMPONENT_010',
+    type: 'straight_wet_area',
+    enabled: false,
+  },
+  metadata: {
+    source: 'preview-3d',
+    notes: 'COMPONENT_002 + COMPONENT_022 sem saia.',
   },
 };
 
@@ -56,80 +198,31 @@ const previewExamples: Array<{
   props: ThreeDPreviewProps;
 }> = [
   {
-    title: 'Frontão 10 cm com saia',
-    description: 'Configuração completa com frontão traseiro, laterais e saia frontal.',
+    title: 'Tampo 30 mm + Frontão 50 mm + Saia 40 mm',
+    description: 'COMPONENT_002 + COMPONENT_021 + COMPONENT_031.',
     props: {
-      composition: fullBacksplashComposition,
+      composition: top30Backsplash50Apron40Composition,
     },
   },
   {
-    title: 'Sem saia',
-    description: 'Tampo com frontão e borda frontal limpa.',
+    title: 'Tampo 30 mm + Frontão 100 mm + Saia 60 mm',
+    description: 'COMPONENT_002 + COMPONENT_022 + COMPONENT_032.',
     props: {
-      width: 2.2,
-      depth: 0.65,
-      thickness: 3,
-      stoneName: 'Cinza Corumba',
-      backsplashEnabled: true,
-      backsplashHeightCm: 8,
-      frontApronEnabled: false,
-      edgeFinishType: 'straight',
-      wetAreaEnabled: true,
-      wetAreaWidth: 0.58,
-      wetAreaDepth: 0.28,
-      wetAreaPosition: { x: 0.18, z: 0.02 },
+      composition: top30Backsplash100Apron60Composition,
     },
   },
   {
-    title: 'Sem frontão',
-    description: 'Bancada solta com saia frontal e área molhada discreta.',
+    title: 'Tampo 30 mm sem frontão e sem saia',
+    description: 'COMPONENT_002 + COMPONENT_020 + COMPONENT_030.',
     props: {
-      width: 2.1,
-      depth: 0.68,
-      thickness: 3,
-      stoneName: 'Preto São Gabriel',
-      backsplashEnabled: false,
-      frontApronEnabled: true,
-      frontApronHeightCm: 10,
-      edgeFinishType: 'rounded',
-      wetAreaEnabled: true,
-      wetAreaWidth: 0.62,
-      wetAreaDepth: 0.32,
-      wetAreaPosition: { x: 0.22, z: 0.02 },
+      composition: top30NoBacksplashNoApronComposition,
     },
   },
   {
-    title: 'Acabamento 45 graus',
-    description: 'Leve chanfro visual na borda frontal.',
+    title: 'Tampo 30 mm + Frontão 100 mm sem saia',
+    description: 'COMPONENT_002 + COMPONENT_022, com COMPONENT_030 desativado.',
     props: {
-      width: 2.3,
-      depth: 0.72,
-      thickness: 3,
-      stoneName: 'Branco Fortaleza',
-      backsplashEnabled: true,
-      backsplashHeightCm: 9,
-      frontApronEnabled: true,
-      frontApronHeightCm: 9,
-      edgeFinishType: 'miter45',
-      wetAreaEnabled: false,
-    },
-  },
-  {
-    title: 'Área molhada e seca',
-    description: 'Marcação visual do rebaixo sem cuba nem regra comercial.',
-    props: {
-      width: 2.4,
-      depth: 0.75,
-      thickness: 3,
-      stoneName: 'Amarelo Ornamental',
-      backsplashEnabled: true,
-      backsplashHeightCm: 10,
-      frontApronEnabled: false,
-      edgeFinishType: 'rounded',
-      wetAreaEnabled: true,
-      wetAreaWidth: 0.86,
-      wetAreaDepth: 0.42,
-      wetAreaPosition: { x: 0.34, z: 0.05 },
+      composition: top30Backsplash100NoApronComposition,
     },
   },
 ];

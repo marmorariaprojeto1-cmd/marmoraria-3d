@@ -1,7 +1,12 @@
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { JoinShadow } from './EdgeFinish';
-import { StoneMaterial, StonePhotoSurface, StonePhysicalMaterial } from '../utils/stoneMaterials';
+import { insetCenterFromFront } from '../utils/geometryUtils';
+import {
+  StoneMaterial,
+  StonePhotoSurface,
+  StonePhysicalMaterial,
+} from '../utils/stoneMaterials';
 import type { EdgeFinishVisualType } from '../utils/geometryUtils';
 
 type FrontApronProps = {
@@ -27,6 +32,17 @@ export function FrontApron({
   texture,
   visualEdgeFinish,
 }: FrontApronProps) {
+  const frontFaceZ = depth / 2;
+  const skirtCenterZ = insetCenterFromFront(depth, skirtThickness);
+  const detailCenterZ = insetCenterFromFront(depth, 0.006);
+  const bottomDetailDepth = 0.026;
+  const bottomDetailCenterZ = insetCenterFromFront(depth, bottomDetailDepth);
+  const doubleApronDetailDepth = skirtThickness * 0.72;
+  const doubleApronDetailCenterZ = insetCenterFromFront(
+    depth,
+    doubleApronDetailDepth,
+  );
+
   return (
     <>
       <mesh
@@ -35,7 +51,7 @@ export function FrontApron({
         position={[
           0,
           -thickness / 2 - skirtHeight / 2 + 0.006,
-          depth / 2 - skirtThickness / 2 + 0.002,
+          skirtCenterZ,
         ]}
       >
         <RoundedBox
@@ -54,16 +70,16 @@ export function FrontApron({
 
       <StonePhotoSurface
         texture={texture}
-        width={width * 0.96}
-        height={skirtHeight * 0.9}
+        width={width * 0.995}
+        height={skirtHeight * 0.98}
         repeatX={Math.max(1.4, width)}
         repeatY={Math.max(0.4, skirtHeight * 1.8)}
-        position={[0, -thickness / 2 - skirtHeight / 2 + 0.006, depth / 2 + 0.001]}
+        position={[0, -thickness / 2 - skirtHeight / 2 + 0.006, frontFaceZ]}
       />
 
       <JoinShadow
         width={width * 0.95}
-        position={[0, -thickness / 2 + 0.002, depth / 2 + 0.005]}
+        position={[0, -thickness / 2 + 0.002, detailCenterZ]}
       />
 
       {visualEdgeFinish === 'doubleApron' && (
@@ -74,10 +90,10 @@ export function FrontApron({
             position={[
               0,
               -thickness / 2 - skirtHeight * 0.5 + 0.006,
-              depth / 2 + skirtThickness * 0.08,
+              doubleApronDetailCenterZ,
             ]}
           >
-            <boxGeometry args={[width * 0.972, 0.010, skirtThickness * 0.72]} />
+            <boxGeometry args={[width * 0.972, 0.010, doubleApronDetailDepth]} />
             <StonePhysicalMaterial
               stoneName={stoneName}
               texture={texture}
@@ -90,7 +106,7 @@ export function FrontApron({
             position={[
               0,
               -thickness / 2 - skirtHeight * 0.5 + 0.014,
-              depth / 2 + 0.008,
+              detailCenterZ,
             ]}
           />
           <JoinShadow
@@ -98,14 +114,25 @@ export function FrontApron({
             position={[
               0,
               -thickness / 2 - skirtHeight * 0.5 - 0.006,
-              depth / 2 + 0.008,
+              detailCenterZ,
             ]}
           />
         </>
       )}
 
-      <mesh receiveShadow position={[0, -thickness / 2 - skirtHeight + 0.008, depth / 2 - 0.006]}>
-        <RoundedBox args={[width * 0.982, 0.018, 0.026]} radius={0.007} smoothness={5}>
+      <mesh
+        receiveShadow
+        position={[
+          0,
+          -thickness / 2 - skirtHeight + 0.008,
+          bottomDetailCenterZ,
+        ]}
+      >
+        <RoundedBox
+          args={[width * 0.982, 0.018, bottomDetailDepth]}
+          radius={0.007}
+          smoothness={5}
+        >
           <StoneMaterial
             stoneName={stoneName}
             texture={texture}
@@ -117,11 +144,11 @@ export function FrontApron({
 
       <StonePhotoSurface
         texture={texture}
-        width={width * 0.95}
+        width={width * 0.995}
         height={0.018}
         repeatX={Math.max(1.4, width)}
         repeatY={0.25}
-        position={[0, -thickness / 2 - skirtHeight + 0.008, depth / 2 + 0.008]}
+        position={[0, -thickness / 2 - skirtHeight + 0.008, frontFaceZ]}
       />
     </>
   );
