@@ -1,283 +1,80 @@
+import { listCommercialProducts } from '../catalog/products';
 import { ThreeDPreview } from '../components/three/ThreeDPreview';
-import type {
-  CountertopComposition,
-  ThreeDPreviewProps,
-} from '../types/threePreview';
+import type { CountertopComposition } from '../types/threePreview';
 
-const top30Backsplash50Apron40Composition: CountertopComposition = {
-  id: 'preview-component-002-021-031',
-  version: 1,
-  top: {
-    id: 'COMPONENT_002',
-    componentId: 'COMPONENT_002',
-    type: 'straight_top_30mm',
-    width: 2.4,
-    depth: 0.7,
-    thicknessMm: 30,
-  },
-  material: {
-    stoneName: 'Branco Siena',
-    stoneImageUrl: null,
-    localTextureKey: 'branco-siena',
-  },
-  backsplash: {
-    id: 'COMPONENT_021',
-    componentId: 'COMPONENT_021',
-    type: 'back_backsplash',
-    enabled: true,
-    heightMm: 50,
-    leftEnabled: true,
-    rightEnabled: true,
-  },
-  frontApron: {
-    id: 'COMPONENT_031',
-    componentId: 'COMPONENT_031',
-    type: 'front_apron',
-    enabled: true,
-    heightMm: 40,
-  },
-  edgeFinish: {
-    type: 'straight',
-  },
-  wetArea: {
-    id: 'COMPONENT_010',
-    componentId: 'COMPONENT_010',
-    type: 'straight_wet_area',
-    enabled: true,
-    width: 0.72,
-    depth: 0.34,
-    position: { x: 0.32, z: 0.04 },
-  },
-  cutout: {
-    id: 'COMPONENT_050',
-    componentId: 'COMPONENT_050',
-    type: 'sink_cutout_500x400',
-    enabled: true,
-  },
-  metadata: {
-    source: 'preview-3d',
-    notes: 'COMPONENT_002 + COMPONENT_021 + COMPONENT_031 + COMPONENT_050.',
-  },
-};
+function formatDimensions({
+  width,
+  depth,
+  thicknessMm,
+}: {
+  width: number;
+  depth: number;
+  thicknessMm: number;
+}) {
+  return `${width.toFixed(2)} m x ${depth.toFixed(2)} m x ${thicknessMm} mm`;
+}
 
-const top30Backsplash100Apron60Composition: CountertopComposition = {
-  id: 'preview-component-002-022-032',
-  version: 1,
-  top: {
-    id: 'COMPONENT_002',
-    componentId: 'COMPONENT_002',
-    type: 'straight_top_30mm',
-    width: 2.5,
-    depth: 0.72,
-    thicknessMm: 30,
-  },
-  material: {
-    stoneName: 'Preto São Gabriel',
-    stoneImageUrl: null,
-    localTextureKey: 'preto-sao-gabriel',
-  },
-  backsplash: {
-    id: 'COMPONENT_022',
-    componentId: 'COMPONENT_022',
-    type: 'back_backsplash',
-    enabled: true,
-    heightMm: 100,
-    leftEnabled: true,
-    rightEnabled: false,
-  },
-  frontApron: {
-    id: 'COMPONENT_032',
-    componentId: 'COMPONENT_032',
-    type: 'front_apron',
-    enabled: true,
-    heightMm: 60,
-  },
-  edgeFinish: {
-    type: 'rounded',
-  },
-  wetArea: {
-    id: 'COMPONENT_011',
-    componentId: 'COMPONENT_011',
-    type: 'double_wet_area',
-    enabled: true,
-    width: 0.68,
-    depth: 0.34,
-    position: { x: 0.28, z: 0.03 },
-  },
-  cutout: {
-    id: 'COMPONENT_051',
-    componentId: 'COMPONENT_051',
-    type: 'sink_cutout_560x340',
-    enabled: true,
-  },
-  metadata: {
-    source: 'preview-3d',
-    notes: 'COMPONENT_002 + COMPONENT_022 + COMPONENT_032 + COMPONENT_051.',
-  },
-};
+function getCompositionSummary(composition: CountertopComposition) {
+  return [
+    composition.top.id ?? composition.top.componentId,
+    composition.backsplash?.id ?? composition.backsplash?.componentId,
+    composition.frontApron?.id ?? composition.frontApron?.componentId,
+    composition.cutout?.id ?? composition.cutout?.componentId,
+  ]
+    .filter(Boolean)
+    .join(' + ');
+}
 
-const top30NoBacksplashNoApronComposition: CountertopComposition = {
-  id: 'preview-component-002-020-030',
-  version: 1,
-  top: {
-    id: 'COMPONENT_002',
-    componentId: 'COMPONENT_002',
-    type: 'straight_top_30mm',
-    width: 2.2,
-    depth: 0.65,
-    thicknessMm: 30,
-  },
-  material: {
-    stoneName: 'Cinza Corumbá',
-    stoneImageUrl: null,
-    localTextureKey: 'cinza-corumba',
-  },
-  backsplash: {
-    id: 'COMPONENT_020',
-    componentId: 'COMPONENT_020',
-    type: 'no_backsplash',
-    enabled: false,
-  },
-  frontApron: {
-    id: 'COMPONENT_030',
-    componentId: 'COMPONENT_030',
-    type: 'no_front_apron',
-    enabled: false,
-  },
-  edgeFinish: {
-    type: 'straight',
-  },
-  wetArea: {
-    id: 'COMPONENT_012',
-    componentId: 'COMPONENT_012',
-    type: 'miter45_wet_area',
-    enabled: true,
-    width: 0.56,
-    depth: 0.3,
-    position: { x: 0.16, z: 0.02 },
-  },
-  cutout: {
-    id: 'COMPONENT_052',
-    componentId: 'COMPONENT_052',
-    type: 'cooktop_cutout_490x350',
-    enabled: true,
-  },
-  metadata: {
-    source: 'preview-3d',
-    notes: 'COMPONENT_002 + COMPONENT_020 + COMPONENT_030 + COMPONENT_052.',
-  },
-};
-
-const top30Backsplash100NoApronComposition: CountertopComposition = {
-  id: 'preview-component-002-022-030',
-  version: 1,
-  top: {
-    id: 'COMPONENT_002',
-    componentId: 'COMPONENT_002',
-    type: 'straight_top_30mm',
-    width: 2.35,
-    depth: 0.68,
-    thicknessMm: 30,
-  },
-  material: {
-    stoneName: 'Branco Fortaleza',
-    stoneImageUrl: null,
-    localTextureKey: 'branco-fortaleza',
-  },
-  backsplash: {
-    id: 'COMPONENT_022',
-    componentId: 'COMPONENT_022',
-    type: 'back_backsplash',
-    enabled: true,
-    heightMm: 100,
-    leftEnabled: false,
-    rightEnabled: false,
-  },
-  frontApron: {
-    id: 'COMPONENT_030',
-    componentId: 'COMPONENT_030',
-    type: 'no_front_apron',
-    enabled: false,
-  },
-  edgeFinish: {
-    type: 'miter45',
-  },
-  wetArea: {
-    componentId: 'COMPONENT_010',
-    type: 'straight_wet_area',
-    enabled: false,
-  },
-  cutout: {
-    id: 'COMPONENT_053',
-    componentId: 'COMPONENT_053',
-    type: 'cooktop_cutout_560x480',
-    enabled: true,
-  },
-  metadata: {
-    source: 'preview-3d',
-    notes: 'COMPONENT_002 + COMPONENT_022 + COMPONENT_030 + COMPONENT_053.',
-  },
-};
-
-const previewExamples: Array<{
-  title: string;
-  description: string;
-  props: ThreeDPreviewProps;
-}> = [
-  {
-    title: 'Tampo 30 mm + Frontão 50 mm + Saia 40 mm',
-    description: 'COMPONENT_002 + COMPONENT_021 + COMPONENT_031 + COMPONENT_050.',
-    props: {
-      composition: top30Backsplash50Apron40Composition,
-    },
-  },
-  {
-    title: 'Tampo 30 mm + Frontão 100 mm + Saia 60 mm',
-    description: 'COMPONENT_002 + COMPONENT_022 + COMPONENT_032 + COMPONENT_051.',
-    props: {
-      composition: top30Backsplash100Apron60Composition,
-    },
-  },
-  {
-    title: 'Tampo 30 mm sem frontão e sem saia',
-    description: 'COMPONENT_002 + COMPONENT_020 + COMPONENT_030 + COMPONENT_052.',
-    props: {
-      composition: top30NoBacksplashNoApronComposition,
-    },
-  },
-  {
-    title: 'Tampo 30 mm + Frontão 100 mm sem saia',
-    description: 'COMPONENT_002 + COMPONENT_022 + COMPONENT_030 + COMPONENT_053.',
-    props: {
-      composition: top30Backsplash100NoApronComposition,
-    },
-  },
-];
+const commercialProducts = listCommercialProducts();
 
 export function Preview3DPage() {
   return (
     <section className="page-shell">
       <div>
         <p className="page-kicker">Preview temporario</p>
-        <h1 className="page-title">Teste isolado do 3D</h1>
+        <h1 className="page-title">Produtos comerciais 3D</h1>
         <p className="page-description">
-          Rota temporaria para validar a primeira versao isolada do preview 3D,
-          sem integrar ao simulador e sem alterar regras comerciais.
+          Rota temporaria para validar produtos comerciais estaticos usando o
+          motor parametrico 3D existente, sem alterar o simulador ou regras
+          comerciais.
         </p>
       </div>
 
       <div className="grid gap-8 xl:grid-cols-2">
-        {previewExamples.map((example) => (
-          <article key={example.title} className="space-y-3">
+        {commercialProducts.map((product) => (
+          <article key={product.id} className="space-y-3">
             <div>
-              <h2 className="text-xl font-semibold text-graphite">
-                {example.title}
+              <p className="text-xs font-semibold uppercase tracking-wide text-moss">
+                {product.category}
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-graphite">
+                {product.name}
               </h2>
               <p className="mt-1 text-sm text-stone-600">
-                {example.description}
+                {product.description}
               </p>
             </div>
-            <ThreeDPreview {...example.props} />
+
+            <dl className="grid gap-2 text-sm text-stone-700 sm:grid-cols-2">
+              <div>
+                <dt className="font-semibold text-graphite">Composicao</dt>
+                <dd>{getCompositionSummary(product.defaultComposition)}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-graphite">Dimensoes</dt>
+                <dd>{formatDimensions(product.defaultDimensions)}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-graphite">Pedra padrao</dt>
+                <dd>{product.defaultComposition.material.stoneName}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-graphite">Produto</dt>
+                <dd>{product.id}</dd>
+              </div>
+            </dl>
+
+            <ThreeDPreview composition={product.defaultComposition} />
           </article>
         ))}
       </div>
