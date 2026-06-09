@@ -23,11 +23,11 @@ export type ProductConfiguration = {
 };
 
 const COMMERCIAL_STONES: CommercialStone[] = [
-  { id: 'STONE_001', name: 'Branco Siena' },
-  { id: 'STONE_002', name: 'Branco Fortaleza' },
-  { id: 'STONE_003', name: 'Preto Sao Gabriel' },
-  { id: 'STONE_004', name: 'Cinza Corumba' },
-  { id: 'STONE_005', name: 'Verde Ubatuba' },
+  { id: 'STONE_001', name: 'Branco Fortaleza' },
+  { id: 'STONE_002', name: 'Branco Siena' },
+  { id: 'STONE_003', name: 'Preto São Gabriel' },
+  { id: 'STONE_004', name: 'Verde Ubatuba' },
+  { id: 'STONE_005', name: 'Cinza Corumbá' },
   { id: 'STONE_006', name: 'Amarelo Ornamental' },
 ];
 
