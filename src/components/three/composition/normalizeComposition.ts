@@ -4,12 +4,14 @@ import type {
 } from '../../../types/threePreview';
 
 function resolveBacksplashHeightMm(componentId?: string, fallbackHeightMm = 0) {
+  if (componentId === 'COMPONENT_020') return 0;
   if (componentId === 'COMPONENT_021') return 50;
   if (componentId === 'COMPONENT_022') return 100;
   return fallbackHeightMm;
 }
 
 function resolveFrontApronHeightMm(componentId?: string, fallbackHeightMm = 0) {
+  if (componentId === 'COMPONENT_030') return 0;
   if (componentId === 'COMPONENT_031') return 40;
   if (componentId === 'COMPONENT_032') return 60;
   return fallbackHeightMm;
@@ -66,7 +68,10 @@ export function normalizeComposition(
       stoneName: composition.material.stoneName,
       stoneImageUrl: composition.material.stoneImageUrl ?? props.stoneImageUrl,
       sinkEnabled: props.sinkEnabled,
-      backsplashEnabled: composition.backsplash?.enabled ?? false,
+      backsplashEnabled:
+        backsplashComponentId === 'COMPONENT_020'
+          ? false
+          : composition.backsplash?.enabled ?? false,
       backsplashHeightCm:
         resolveBacksplashHeightMm(
           backsplashComponentId,
@@ -74,7 +79,10 @@ export function normalizeComposition(
         ) / 10,
       leftBacksplashEnabled: composition.backsplash?.leftEnabled ?? false,
       rightBacksplashEnabled: composition.backsplash?.rightEnabled ?? false,
-      frontApronEnabled: composition.frontApron?.enabled ?? false,
+      frontApronEnabled:
+        frontApronComponentId === 'COMPONENT_030'
+          ? false
+          : composition.frontApron?.enabled ?? false,
       frontApronHeightCm:
         resolveFrontApronHeightMm(
           frontApronComponentId,

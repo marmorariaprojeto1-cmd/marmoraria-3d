@@ -295,7 +295,7 @@ function CountertopScene({
           edgeFinishType={visualEdgeFinish}
         />
 
-        {backsplashEnabled && BacksplashComponent ? (
+        {BacksplashComponent ? (
           <BacksplashComponent
             width={model.w}
             depth={model.d}
@@ -349,7 +349,7 @@ function CountertopScene({
           />
         )}
 
-        {model.skirtEnabled && FrontApronComponent ? (
+        {FrontApronComponent ? (
           <FrontApronComponent
             width={model.w}
             depth={model.d}
@@ -377,17 +377,6 @@ function CountertopScene({
           )
         )}
 
-        {!model.skirtEnabled && (
-          <mesh position={[0, -model.t / 2 + 0.002, model.d / 2 + 0.003]}>
-            <boxGeometry args={[model.w * 0.94, 0.004, 0.004]} />
-            <meshBasicMaterial
-              color="#ffffff"
-              transparent
-              opacity={0.16}
-              depthWrite={false}
-            />
-          </mesh>
-        )}
           </>
         )}
       </group>

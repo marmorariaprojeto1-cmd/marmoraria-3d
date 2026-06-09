@@ -14,6 +14,11 @@ import {
   Component012WetArea45,
 } from './COMPONENT_012_WetArea45';
 import {
+  COMPONENT_020_ID,
+  COMPONENT_020_NAME,
+  Component020NoBacksplash,
+} from './COMPONENT_020_NoBacksplash';
+import {
   COMPONENT_021_ID,
   COMPONENT_021_NAME,
   Component021Backsplash50mm,
@@ -48,6 +53,11 @@ import {
   COMPONENT_002_NAME,
   Component002Top30mm,
 } from './COMPONENT_002_Top30mm';
+import {
+  COMPONENT_030_ID,
+  COMPONENT_030_NAME,
+  Component030NoFrontApron,
+} from './COMPONENT_030_NoFrontApron';
 import {
   COMPONENT_031_ID,
   COMPONENT_031_NAME,
@@ -98,6 +108,12 @@ export const threeDComponentRegistry: ThreeDComponentRegistryItem[] = [
     component: Component012WetArea45,
   },
   {
+    id: COMPONENT_020_ID,
+    name: COMPONENT_020_NAME,
+    category: 'backsplash',
+    component: Component020NoBacksplash,
+  },
+  {
     id: COMPONENT_021_ID,
     name: COMPONENT_021_NAME,
     category: 'backsplash',
@@ -108,6 +124,12 @@ export const threeDComponentRegistry: ThreeDComponentRegistryItem[] = [
     name: COMPONENT_022_NAME,
     category: 'backsplash',
     component: Component022Backsplash100mm,
+  },
+  {
+    id: COMPONENT_030_ID,
+    name: COMPONENT_030_NAME,
+    category: 'frontApron',
+    component: Component030NoFrontApron,
   },
   {
     id: COMPONENT_031_ID,
@@ -156,8 +178,10 @@ export {
   Component011WetAreaDouble,
   Component012WetArea45,
   Component002Top30mm,
+  Component020NoBacksplash,
   Component021Backsplash50mm,
   Component022Backsplash100mm,
+  Component030NoFrontApron,
   Component031FrontApron40mm,
   Component032FrontApron60mm,
   Component050SinkCutout500x400,
