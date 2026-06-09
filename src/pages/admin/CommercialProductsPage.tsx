@@ -1,9 +1,9 @@
 import {
   buildEstimateBreakdown,
   calculateCommercialEstimate,
+  formatCompositionComponents,
 } from '../../catalog/pricing';
 import { listCommercialProducts } from '../../catalog/products';
-import type { CountertopComposition } from '../../types/threePreview';
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('pt-BR', {
@@ -22,18 +22,6 @@ function formatDimensions({
   thicknessMm: number;
 }) {
   return `${width.toFixed(2)} m x ${depth.toFixed(2)} m x ${thicknessMm} mm`;
-}
-
-function getCompositionSummary(composition: CountertopComposition) {
-  return [
-    composition.top.id ?? composition.top.componentId,
-    composition.backsplash?.id ?? composition.backsplash?.componentId,
-    composition.frontApron?.id ?? composition.frontApron?.componentId,
-    composition.wetArea?.id ?? composition.wetArea?.componentId,
-    composition.cutout?.id ?? composition.cutout?.componentId,
-  ]
-    .filter(Boolean)
-    .join(' + ');
 }
 
 const commercialProducts = listCommercialProducts();
@@ -96,7 +84,7 @@ export function CommercialProductsPage() {
                 />
                 <InfoBlock
                   label="Composição"
-                  value={getCompositionSummary(estimate.composition)}
+                  value={formatCompositionComponents(estimate.composition)}
                 />
               </div>
 
@@ -135,6 +123,9 @@ export function CommercialProductsPage() {
                       value={formatCurrency(breakdown.estimatedTotal)}
                       strong
                     />
+                    <p className="mt-3 text-sm font-medium text-stone-600">
+                      Estimativa local para teste. Não substitui orçamento final.
+                    </p>
                   </div>
                 </dl>
               </div>

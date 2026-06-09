@@ -13,6 +13,10 @@ export {
   buildEstimateBreakdown,
   formatEstimateBreakdown,
 } from './estimateBreakdown';
+export {
+  formatCompositionComponents,
+  getComponentDisplayName,
+} from './compositionDisplay';
 export type {
   BasePriceResult,
   CalculateBasePriceInput,

@@ -1,10 +1,10 @@
 import {
   buildEstimateBreakdown,
   calculateCommercialEstimate,
+  formatCompositionComponents,
 } from '../catalog/pricing';
 import { listCommercialProducts } from '../catalog/products';
 import { ThreeDPreview } from '../components/three/ThreeDPreview';
-import type { CountertopComposition } from '../types/threePreview';
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('pt-BR', {
@@ -23,17 +23,6 @@ function formatDimensions({
   thicknessMm: number;
 }) {
   return `${width.toFixed(2)} m x ${depth.toFixed(2)} m x ${thicknessMm} mm`;
-}
-
-function getCompositionSummary(composition: CountertopComposition) {
-  return [
-    composition.top.id ?? composition.top.componentId,
-    composition.backsplash?.id ?? composition.backsplash?.componentId,
-    composition.frontApron?.id ?? composition.frontApron?.componentId,
-    composition.cutout?.id ?? composition.cutout?.componentId,
-  ]
-    .filter(Boolean)
-    .join(' + ');
 }
 
 const commercialProducts = listCommercialProducts();
@@ -84,7 +73,7 @@ export function Preview3DPage() {
             <dl className="grid gap-2 text-sm text-stone-700 sm:grid-cols-2">
               <div>
                 <dt className="font-semibold text-graphite">Composicao</dt>
-                <dd>{getCompositionSummary(estimate.composition)}</dd>
+                <dd>{formatCompositionComponents(estimate.composition)}</dd>
               </div>
               <div>
                 <dt className="font-semibold text-graphite">Dimensoes</dt>

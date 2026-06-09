@@ -56,6 +56,11 @@ function hasWebGLSupport() {
   }
 }
 
+function formatThicknessMm(thickness: number) {
+  const thicknessMm = thickness <= 1 ? thickness * 1000 : thickness * 10;
+  return Math.round(thicknessMm);
+}
+
 function AutoRotate({ targetRef }: { targetRef: React.RefObject<THREE.Group | null> }) {
   const t = useRef(0);
 
@@ -455,7 +460,9 @@ export function ThreeDPreview(props: ThreeDPreviewProps) {
           <p className="text-xs font-medium text-stone-500">
             {previewProps.width.toFixed(2)} m × {previewProps.depth.toFixed(2)} m
           </p>
-          <p className="text-xs text-stone-400">esp. {previewProps.thickness} mm</p>
+          <p className="text-xs text-stone-400">
+            esp. {formatThicknessMm(previewProps.thickness)} mm
+          </p>
         </div>
       </div>
 

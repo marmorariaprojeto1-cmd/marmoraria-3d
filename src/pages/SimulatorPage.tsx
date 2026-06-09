@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+  buildEstimateBreakdown,
+  calculateCommercialEstimate,
+  formatCompositionComponents,
+} from '../catalog/pricing';
 import { listCommercialProducts } from '../catalog/products';
-import { buildProductConfiguration } from '../catalog/products/pricing';
 import { ThreeDPreview } from '../components/three/ThreeDPreview';
 import { hasSupabaseConfig, supabase } from '../lib/supabase';
 import { calculateQuoteTotal, roundMoney } from '../services/quoteCalculator';
@@ -343,10 +347,10 @@ export function SimulatorPage() {
   const selectedSink = catalog.sinks.find((sink) => sink.id === sinkId) ?? null;
   const selectedFinish =
     catalog.finishes.find((finish) => finish.id === finishId) ?? null;
-  const commercialProductConfigurations = useMemo(
+  const commercialProductEstimates = useMemo(
     () =>
       commercialProducts.map((product) =>
-        buildProductConfiguration({
+        calculateCommercialEstimate({
           productId: product.id,
           stoneId: product.allowedStones[0],
           width: product.defaultDimensions.width,
@@ -355,10 +359,15 @@ export function SimulatorPage() {
       ),
     [],
   );
-  const selectedPreviewProductConfiguration =
-    commercialProductConfigurations.find(
-      (configuration) => configuration.product.id === previewProductId,
+  const selectedPreviewProductEstimate =
+    commercialProductEstimates.find(
+      (estimate) => estimate.product.id === previewProductId,
     ) ?? null;
+  const selectedPreviewProductBreakdown = selectedPreviewProductEstimate
+    ? buildEstimateBreakdown({
+        commercialEstimate: selectedPreviewProductEstimate,
+      })
+    : null;
 
   const dimensions = useMemo(
     () => ({
@@ -566,7 +575,7 @@ export function SimulatorPage() {
               Produtos prontos
             </h2>
           </div>
-          {selectedPreviewProductConfiguration && (
+          {selectedPreviewProductEstimate && (
             <button
               className="secondary-button"
               type="button"
@@ -578,66 +587,55 @@ export function SimulatorPage() {
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {commercialProductConfigurations.map((configuration) => (
+          {commercialProductEstimates.map((estimate) => (
             <button
-              key={configuration.product.id}
+              key={estimate.product.id}
               className={[
                 'rounded-lg border p-4 text-left shadow-sm transition hover:-translate-y-0.5',
-                previewProductId === configuration.product.id
+                previewProductId === estimate.product.id
                   ? 'border-graphite bg-graphite text-white shadow-md'
                   : 'border-stoneLine bg-white text-graphite hover:border-moss/50 hover:bg-stone-50',
               ].join(' ')}
               type="button"
-              onClick={() => setPreviewProductId(configuration.product.id)}
+              onClick={() => setPreviewProductId(estimate.product.id)}
             >
               <span className="block text-xs font-semibold uppercase">
-                {configuration.product.category}
+                {estimate.product.category}
               </span>
               <span className="mt-2 block font-semibold">
-                {configuration.product.name}
+                {estimate.product.name}
               </span>
               <span
                 className={[
                   'mt-1 block text-sm',
-                  previewProductId === configuration.product.id
+                  previewProductId === estimate.product.id
                     ? 'text-stone-100'
                     : 'text-stone-600',
                 ].join(' ')}
               >
-                {configuration.product.description}
+                {estimate.product.description}
               </span>
               <span
                 className={[
                   'mt-3 block text-sm font-medium',
-                  previewProductId === configuration.product.id
+                  previewProductId === estimate.product.id
                     ? 'text-white'
                     : 'text-graphite',
                 ].join(' ')}
               >
-                {configuration.dimensions.width.toFixed(2)}m x{' '}
-                {configuration.dimensions.depth.toFixed(2)}m ·{' '}
-                {configuration.estimatedAreaM2.toFixed(2)} m²
+                {estimate.dimensions.width.toFixed(2)}m x{' '}
+                {estimate.dimensions.depth.toFixed(2)}m ·{' '}
+                {estimate.estimatedAreaM2.toFixed(2)} m²
               </span>
               <span
                 className={[
                   'mt-2 block text-xs',
-                  previewProductId === configuration.product.id
+                  previewProductId === estimate.product.id
                     ? 'text-stone-100'
                     : 'text-stone-500',
                 ].join(' ')}
               >
-                {[
-                  configuration.composition.top.id ??
-                    configuration.composition.top.componentId,
-                  configuration.composition.backsplash?.id ??
-                    configuration.composition.backsplash?.componentId,
-                  configuration.composition.frontApron?.id ??
-                    configuration.composition.frontApron?.componentId,
-                  configuration.composition.cutout?.id ??
-                    configuration.composition.cutout?.componentId,
-                ]
-                  .filter(Boolean)
-                  .join(' + ')}
+                {formatCompositionComponents(estimate.composition)}
               </span>
             </button>
           ))}
@@ -1099,9 +1097,9 @@ export function SimulatorPage() {
             </div>
           </div>
 
-          {selectedPreviewProductConfiguration ? (
+          {selectedPreviewProductEstimate ? (
             <ThreeDPreview
-              composition={selectedPreviewProductConfiguration.composition}
+              composition={selectedPreviewProductEstimate.composition}
             />
           ) : (
             <ThreeDPreview
@@ -1112,6 +1110,57 @@ export function SimulatorPage() {
               stoneImageUrl={selectedStone?.image_url}
               sinkEnabled={Boolean(selectedSink)}
             />
+          )}
+
+          {selectedPreviewProductEstimate && selectedPreviewProductBreakdown && (
+            <div className="surface-card p-5">
+              <h2 className="text-lg font-semibold text-graphite">
+                Resumo Comercial
+              </h2>
+              <p className="mt-2 text-sm font-medium text-stone-600">
+                Estimativa local para teste. Não substitui orçamento final.
+              </p>
+              <dl className="mt-4 space-y-3 text-sm">
+                <SummaryRow
+                  label="Produto"
+                  value={selectedPreviewProductEstimate.product.name}
+                />
+                <SummaryRow
+                  label="Pedra"
+                  value={selectedPreviewProductEstimate.composition.material.stoneName}
+                />
+                <SummaryRow
+                  label="Dimensões"
+                  value={`${selectedPreviewProductEstimate.dimensions.width.toFixed(
+                    2,
+                  )}m x ${selectedPreviewProductEstimate.dimensions.depth.toFixed(
+                    2,
+                  )}m · ${selectedPreviewProductEstimate.dimensions.thicknessMm} mm`}
+                />
+                <SummaryRow
+                  label="Área estimada"
+                  value={`${selectedPreviewProductBreakdown.areaM2.toFixed(2)} m²`}
+                />
+                <SummaryRow
+                  label="Preço por m²"
+                  value={formatCurrency(selectedPreviewProductBreakdown.stonePrice)}
+                />
+                <SummaryRow
+                  label="Preço base"
+                  value={formatCurrency(selectedPreviewProductBreakdown.stoneSubtotal)}
+                />
+                <SummaryRow
+                  label="Adicionais"
+                  value={formatCurrency(selectedPreviewProductBreakdown.addonsSubtotal)}
+                />
+                <div className="border-t border-stoneLine pt-4">
+                  <SummaryRow
+                    label="Total estimado"
+                    value={formatCurrency(selectedPreviewProductBreakdown.estimatedTotal)}
+                  />
+                </div>
+              </dl>
+            </div>
           )}
 
           <div className="surface-card p-5">
