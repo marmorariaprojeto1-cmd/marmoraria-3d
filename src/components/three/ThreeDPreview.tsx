@@ -128,6 +128,7 @@ function TextureLoadingSkeleton({ model }: { model: CountertopModel }) {
 function CountertopScene({
   topComponentId,
   wetAreaComponentId,
+  cutoutComponentId,
   backsplashComponentId,
   frontApronComponentId,
   width,
@@ -146,6 +147,8 @@ function CountertopScene({
   wetAreaWidth,
   wetAreaDepth,
   wetAreaPosition,
+  cutoutEnabled,
+  cutoutPosition,
 }: NormalizedThreeDPreviewProps) {
   const visualEdgeFinish = resolveEdgeFinishVisualType(edgeFinishType);
   const resolvedTextureUrl = resolveUsableTextureUrl(stoneName, stoneImageUrl);
@@ -156,6 +159,9 @@ function CountertopScene({
     : null;
   const wetAreaRegistryItem = wetAreaComponentId
     ? findThreeDComponent(wetAreaComponentId)
+    : null;
+  const cutoutRegistryItem = cutoutComponentId
+    ? findThreeDComponent(cutoutComponentId)
     : null;
   const backsplashRegistryItem = backsplashComponentId
     ? findThreeDComponent(backsplashComponentId)
@@ -168,6 +174,10 @@ function CountertopScene({
   const WetAreaComponent =
     wetAreaRegistryItem?.category === 'wetArea'
       ? wetAreaRegistryItem.component
+      : null;
+  const CutoutComponent =
+    cutoutRegistryItem?.category === 'cutout'
+      ? cutoutRegistryItem.component
       : null;
   const BacksplashComponent =
     backsplashRegistryItem?.category === 'backsplash'
@@ -261,6 +271,18 @@ function CountertopScene({
             wetAreaWidth={wetAreaWidth}
             wetAreaDepth={wetAreaDepth}
             wetAreaPosition={wetAreaPosition}
+          />
+        )}
+
+        {cutoutEnabled && CutoutComponent && (
+          <CutoutComponent
+            width={model.w}
+            depth={model.d}
+            thickness={model.t}
+            edgeRadius={model.edgeRadius}
+            stoneName={stoneName}
+            texture={texture}
+            cutoutPosition={cutoutPosition}
           />
         )}
 

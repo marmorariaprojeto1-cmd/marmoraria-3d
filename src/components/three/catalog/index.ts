@@ -19,6 +19,26 @@ import {
   Component021Backsplash50mm,
 } from './COMPONENT_021_Backsplash50mm';
 import {
+  COMPONENT_050_ID,
+  COMPONENT_050_NAME,
+  Component050SinkCutout500x400,
+} from './COMPONENT_050_SinkCutout500x400';
+import {
+  COMPONENT_051_ID,
+  COMPONENT_051_NAME,
+  Component051SinkCutout560x340,
+} from './COMPONENT_051_SinkCutout560x340';
+import {
+  COMPONENT_052_ID,
+  COMPONENT_052_NAME,
+  Component052CooktopCutout490x350,
+} from './COMPONENT_052_CooktopCutout490x350';
+import {
+  COMPONENT_053_ID,
+  COMPONENT_053_NAME,
+  Component053CooktopCutout560x480,
+} from './COMPONENT_053_CooktopCutout560x480';
+import {
   COMPONENT_022_ID,
   COMPONENT_022_NAME,
   Component022Backsplash100mm,
@@ -101,6 +121,30 @@ export const threeDComponentRegistry: ThreeDComponentRegistryItem[] = [
     category: 'frontApron',
     component: Component032FrontApron60mm,
   },
+  {
+    id: COMPONENT_050_ID,
+    name: COMPONENT_050_NAME,
+    category: 'cutout',
+    component: Component050SinkCutout500x400,
+  },
+  {
+    id: COMPONENT_051_ID,
+    name: COMPONENT_051_NAME,
+    category: 'cutout',
+    component: Component051SinkCutout560x340,
+  },
+  {
+    id: COMPONENT_052_ID,
+    name: COMPONENT_052_NAME,
+    category: 'cutout',
+    component: Component052CooktopCutout490x350,
+  },
+  {
+    id: COMPONENT_053_ID,
+    name: COMPONENT_053_NAME,
+    category: 'cutout',
+    component: Component053CooktopCutout560x480,
+  },
 ];
 
 export function findThreeDComponent(componentId: string) {
@@ -116,4 +160,8 @@ export {
   Component022Backsplash100mm,
   Component031FrontApron40mm,
   Component032FrontApron60mm,
+  Component050SinkCutout500x400,
+  Component051SinkCutout560x340,
+  Component052CooktopCutout490x350,
+  Component053CooktopCutout560x480,
 };

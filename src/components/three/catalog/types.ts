@@ -1,11 +1,15 @@
 import type { ComponentType } from 'react';
 import type * as THREE from 'three';
-import type { ThreeDPreviewProps } from '../../../types/threePreview';
+import type {
+  ThreeDCutoutPosition,
+  ThreeDPreviewProps,
+} from '../../../types/threePreview';
 import type { EdgeFinishVisualType } from '../utils/geometryUtils';
 
 export type ThreeDComponentCategory =
   | 'top'
   | 'wetArea'
+  | 'cutout'
   | 'backsplash'
   | 'frontApron'
   | 'edgeFinish';
@@ -25,6 +29,7 @@ export type ThreeDRegisteredComponentProps = {
   wetAreaWidth?: number;
   wetAreaDepth?: number;
   wetAreaPosition?: ThreeDPreviewProps['wetAreaPosition'];
+  cutoutPosition?: ThreeDCutoutPosition;
 };
 
 export type ThreeDRegisteredComponent = ComponentType<ThreeDRegisteredComponentProps>;

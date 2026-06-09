@@ -11,6 +11,11 @@ export type ThreeDWetAreaPosition = {
   z?: number;
 };
 
+export type ThreeDCutoutPosition = {
+  x?: number;
+  z?: number;
+};
+
 export type ThreeDTopComponent = {
   id?: string;
   componentId?: string;
@@ -54,6 +59,14 @@ export type ThreeDFrontApronComponent = {
   heightMm?: number;
 };
 
+export type ThreeDCutoutComponent = {
+  id?: string;
+  componentId: string;
+  type: string;
+  enabled: boolean;
+  position?: ThreeDCutoutPosition;
+};
+
 export type ThreeDEdgeFinishComponent = {
   type: ThreeDEdgeFinishType;
 };
@@ -70,6 +83,7 @@ export type CountertopComposition = {
   top: ThreeDTopComponent;
   material: ThreeDMaterialComponent;
   wetArea?: ThreeDWetAreaComponent;
+  cutout?: ThreeDCutoutComponent;
   backsplash?: ThreeDBacksplashComponent;
   frontApron?: ThreeDFrontApronComponent;
   edgeFinish?: ThreeDEdgeFinishComponent;

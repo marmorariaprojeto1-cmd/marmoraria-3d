@@ -1,4 +1,7 @@
-import type { ThreeDPreviewProps } from '../../../types/threePreview';
+import type {
+  ThreeDCutoutPosition,
+  ThreeDPreviewProps,
+} from '../../../types/threePreview';
 
 function resolveBacksplashHeightMm(componentId?: string, fallbackHeightMm = 0) {
   if (componentId === 'COMPONENT_021') return 50;
@@ -15,6 +18,7 @@ function resolveFrontApronHeightMm(componentId?: string, fallbackHeightMm = 0) {
 export type NormalizedThreeDPreviewProps = {
   topComponentId?: string;
   wetAreaComponentId?: string;
+  cutoutComponentId?: string;
   backsplashComponentId?: string;
   frontApronComponentId?: string;
   width: number;
@@ -34,6 +38,8 @@ export type NormalizedThreeDPreviewProps = {
   wetAreaWidth?: number;
   wetAreaDepth?: number;
   wetAreaPosition?: ThreeDPreviewProps['wetAreaPosition'];
+  cutoutEnabled: boolean;
+  cutoutPosition?: ThreeDCutoutPosition;
 };
 
 export function normalizeComposition(
@@ -43,12 +49,15 @@ export function normalizeComposition(
     const { composition } = props;
     const wetAreaComponentId =
       composition.wetArea?.id ?? composition.wetArea?.componentId;
+    const cutoutComponentId =
+      composition.cutout?.id ?? composition.cutout?.componentId;
     const backsplashComponentId = composition.backsplash?.id;
     const frontApronComponentId = composition.frontApron?.id;
 
     return {
       topComponentId: composition.top.id ?? composition.top.componentId,
       wetAreaComponentId,
+      cutoutComponentId,
       backsplashComponentId,
       frontApronComponentId,
       width: composition.top.width,
@@ -76,6 +85,8 @@ export function normalizeComposition(
       wetAreaWidth: composition.wetArea?.width,
       wetAreaDepth: composition.wetArea?.depth,
       wetAreaPosition: composition.wetArea?.position,
+      cutoutEnabled: composition.cutout?.enabled ?? false,
+      cutoutPosition: composition.cutout?.position,
     };
   }
 
@@ -97,5 +108,6 @@ export function normalizeComposition(
     wetAreaWidth: props.wetAreaWidth,
     wetAreaDepth: props.wetAreaDepth,
     wetAreaPosition: props.wetAreaPosition,
+    cutoutEnabled: false,
   };
 }

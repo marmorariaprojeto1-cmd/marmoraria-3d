@@ -48,9 +48,15 @@ const top30Backsplash50Apron40Composition: CountertopComposition = {
     depth: 0.34,
     position: { x: 0.32, z: 0.04 },
   },
+  cutout: {
+    id: 'COMPONENT_050',
+    componentId: 'COMPONENT_050',
+    type: 'sink_cutout_500x400',
+    enabled: true,
+  },
   metadata: {
     source: 'preview-3d',
-    notes: 'COMPONENT_002 + COMPONENT_021 + COMPONENT_031.',
+    notes: 'COMPONENT_002 + COMPONENT_021 + COMPONENT_031 + COMPONENT_050.',
   },
 };
 
@@ -98,9 +104,15 @@ const top30Backsplash100Apron60Composition: CountertopComposition = {
     depth: 0.34,
     position: { x: 0.28, z: 0.03 },
   },
+  cutout: {
+    id: 'COMPONENT_051',
+    componentId: 'COMPONENT_051',
+    type: 'sink_cutout_560x340',
+    enabled: true,
+  },
   metadata: {
     source: 'preview-3d',
-    notes: 'COMPONENT_002 + COMPONENT_022 + COMPONENT_032.',
+    notes: 'COMPONENT_002 + COMPONENT_022 + COMPONENT_032 + COMPONENT_051.',
   },
 };
 
@@ -144,9 +156,15 @@ const top30NoBacksplashNoApronComposition: CountertopComposition = {
     depth: 0.3,
     position: { x: 0.16, z: 0.02 },
   },
+  cutout: {
+    id: 'COMPONENT_052',
+    componentId: 'COMPONENT_052',
+    type: 'cooktop_cutout_490x350',
+    enabled: true,
+  },
   metadata: {
     source: 'preview-3d',
-    notes: 'COMPONENT_002 + COMPONENT_020 + COMPONENT_030.',
+    notes: 'COMPONENT_002 + COMPONENT_020 + COMPONENT_030 + COMPONENT_052.',
   },
 };
 
@@ -189,9 +207,15 @@ const top30Backsplash100NoApronComposition: CountertopComposition = {
     type: 'straight_wet_area',
     enabled: false,
   },
+  cutout: {
+    id: 'COMPONENT_053',
+    componentId: 'COMPONENT_053',
+    type: 'cooktop_cutout_560x480',
+    enabled: true,
+  },
   metadata: {
     source: 'preview-3d',
-    notes: 'COMPONENT_002 + COMPONENT_022 sem saia.',
+    notes: 'COMPONENT_002 + COMPONENT_022 + COMPONENT_030 + COMPONENT_053.',
   },
 };
 
@@ -202,28 +226,28 @@ const previewExamples: Array<{
 }> = [
   {
     title: 'Tampo 30 mm + Frontão 50 mm + Saia 40 mm',
-    description: 'COMPONENT_002 + COMPONENT_021 + COMPONENT_031.',
+    description: 'COMPONENT_002 + COMPONENT_021 + COMPONENT_031 + COMPONENT_050.',
     props: {
       composition: top30Backsplash50Apron40Composition,
     },
   },
   {
     title: 'Tampo 30 mm + Frontão 100 mm + Saia 60 mm',
-    description: 'COMPONENT_002 + COMPONENT_022 + COMPONENT_032.',
+    description: 'COMPONENT_002 + COMPONENT_022 + COMPONENT_032 + COMPONENT_051.',
     props: {
       composition: top30Backsplash100Apron60Composition,
     },
   },
   {
     title: 'Tampo 30 mm sem frontão e sem saia',
-    description: 'COMPONENT_002 + COMPONENT_020 + COMPONENT_030.',
+    description: 'COMPONENT_002 + COMPONENT_020 + COMPONENT_030 + COMPONENT_052.',
     props: {
       composition: top30NoBacksplashNoApronComposition,
     },
   },
   {
     title: 'Tampo 30 mm + Frontão 100 mm sem saia',
-    description: 'COMPONENT_002 + COMPONENT_022, com COMPONENT_030 desativado.',
+    description: 'COMPONENT_002 + COMPONENT_022 + COMPONENT_030 + COMPONENT_053.',
     props: {
       composition: top30Backsplash100NoApronComposition,
     },
