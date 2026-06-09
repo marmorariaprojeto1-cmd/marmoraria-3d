@@ -1,4 +1,5 @@
 import { listCommercialProducts } from '../catalog/products';
+import { buildProductConfiguration } from '../catalog/products/pricing';
 import { ThreeDPreview } from '../components/three/ThreeDPreview';
 import type { CountertopComposition } from '../types/threePreview';
 
@@ -26,6 +27,14 @@ function getCompositionSummary(composition: CountertopComposition) {
 }
 
 const commercialProducts = listCommercialProducts();
+const commercialProductConfigurations = commercialProducts.map((product) =>
+  buildProductConfiguration({
+    productId: product.id,
+    stoneId: product.allowedStones[0],
+    width: product.defaultDimensions.width,
+    depth: product.defaultDimensions.depth,
+  }),
+);
 
 export function Preview3DPage() {
   return (
@@ -41,40 +50,44 @@ export function Preview3DPage() {
       </div>
 
       <div className="grid gap-8 xl:grid-cols-2">
-        {commercialProducts.map((product) => (
-          <article key={product.id} className="space-y-3">
+        {commercialProductConfigurations.map((configuration) => (
+          <article key={configuration.product.id} className="space-y-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-moss">
-                {product.category}
+                {configuration.product.category}
               </p>
               <h2 className="mt-1 text-xl font-semibold text-graphite">
-                {product.name}
+                {configuration.product.name}
               </h2>
               <p className="mt-1 text-sm text-stone-600">
-                {product.description}
+                {configuration.product.description}
               </p>
             </div>
 
             <dl className="grid gap-2 text-sm text-stone-700 sm:grid-cols-2">
               <div>
                 <dt className="font-semibold text-graphite">Composicao</dt>
-                <dd>{getCompositionSummary(product.defaultComposition)}</dd>
+                <dd>{getCompositionSummary(configuration.composition)}</dd>
               </div>
               <div>
                 <dt className="font-semibold text-graphite">Dimensoes</dt>
-                <dd>{formatDimensions(product.defaultDimensions)}</dd>
+                <dd>{formatDimensions(configuration.dimensions)}</dd>
               </div>
               <div>
                 <dt className="font-semibold text-graphite">Pedra padrao</dt>
-                <dd>{product.defaultComposition.material.stoneName}</dd>
+                <dd>{configuration.composition.material.stoneName}</dd>
               </div>
               <div>
                 <dt className="font-semibold text-graphite">Produto</dt>
-                <dd>{product.id}</dd>
+                <dd>{configuration.product.id}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-graphite">Area estimada</dt>
+                <dd>{configuration.estimatedAreaM2.toFixed(2)} m2</dd>
               </div>
             </dl>
 
-            <ThreeDPreview composition={product.defaultComposition} />
+            <ThreeDPreview composition={configuration.composition} />
           </article>
         ))}
       </div>
