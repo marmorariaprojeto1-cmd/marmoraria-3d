@@ -1,11 +1,13 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import {
   resolveStoneProfile,
   StoneMaterial,
   StonePhotoSurface,
+  StonePhysicalMaterial,
 } from '../utils/stoneMaterials';
+import type { ThreeDCutoutPosition } from '../../../types/threePreview';
 
 type StoneTopProps = {
   width: number;
@@ -14,6 +16,9 @@ type StoneTopProps = {
   edgeRadius: number;
   stoneName: string;
   texture: THREE.Texture | null;
+  cutoutWidth?: number;
+  cutoutDepth?: number;
+  cutoutPosition?: ThreeDCutoutPosition;
 };
 
 type StoneVeinsProps = {
@@ -63,6 +68,164 @@ function StoneVeins({ width, depth, thickness, stoneName }: StoneVeinsProps) {
   );
 }
 
+function createStoneTopCutoutGeometry({
+  width,
+  depth,
+  thickness,
+  edgeRadius,
+  cutoutWidth,
+  cutoutDepth,
+  cutoutPosition,
+}: {
+  width: number;
+  depth: number;
+  thickness: number;
+  edgeRadius: number;
+  cutoutWidth: number;
+  cutoutDepth: number;
+  cutoutPosition?: ThreeDCutoutPosition;
+}) {
+  const margin = Math.max(edgeRadius * 2.2, 0.045);
+  const safeCutoutWidth = Math.min(cutoutWidth, Math.max(0.08, width - margin * 2));
+  const safeCutoutDepth = Math.min(cutoutDepth, Math.max(0.08, depth - margin * 2));
+  const maxX = Math.max(0, width / 2 - safeCutoutWidth / 2 - margin);
+  const maxZ = Math.max(0, depth / 2 - safeCutoutDepth / 2 - margin);
+  const cutoutX = THREE.MathUtils.clamp(cutoutPosition?.x ?? 0, -maxX, maxX);
+  const cutoutZ = THREE.MathUtils.clamp(cutoutPosition?.z ?? 0, -maxZ, maxZ);
+  const bevelSize = Math.min(0.008, edgeRadius * 0.82, thickness * 0.18);
+  const uvScale = 0.72;
+  const uvGenerator = {
+    generateTopUV(
+      _geometry: THREE.BufferGeometry,
+      vertices: number[],
+      indexA: number,
+      indexB: number,
+      indexC: number,
+    ) {
+      const ax = vertices[indexA * 3];
+      const ay = vertices[indexA * 3 + 1];
+      const bx = vertices[indexB * 3];
+      const by = vertices[indexB * 3 + 1];
+      const cx = vertices[indexC * 3];
+      const cy = vertices[indexC * 3 + 1];
+
+      return [
+        new THREE.Vector2((ax / width + 0.5) * uvScale, (ay / depth + 0.5) * uvScale),
+        new THREE.Vector2((bx / width + 0.5) * uvScale, (by / depth + 0.5) * uvScale),
+        new THREE.Vector2((cx / width + 0.5) * uvScale, (cy / depth + 0.5) * uvScale),
+      ];
+    },
+    generateSideWallUV(
+      _geometry: THREE.BufferGeometry,
+      vertices: number[],
+      indexA: number,
+      indexB: number,
+      indexC: number,
+      indexD: number,
+    ) {
+      const ax = vertices[indexA * 3];
+      const ay = vertices[indexA * 3 + 1];
+      const bx = vertices[indexB * 3];
+      const by = vertices[indexB * 3 + 1];
+      const cx = vertices[indexC * 3];
+      const cz = vertices[indexC * 3 + 2];
+      const dx = vertices[indexD * 3];
+      const dz = vertices[indexD * 3 + 2];
+      const wallLength = Math.hypot(bx - ax, by - ay);
+
+      return [
+        new THREE.Vector2(0, 0),
+        new THREE.Vector2(wallLength * 1.5, 0),
+        new THREE.Vector2(wallLength * 1.5 + Math.abs(cx - dx) * 0.12, Math.abs(cz) / thickness),
+        new THREE.Vector2(0, Math.abs(dz) / thickness),
+      ];
+    },
+  };
+  const shape = new THREE.Shape();
+
+  shape.moveTo(-width / 2, -depth / 2);
+  shape.lineTo(width / 2, -depth / 2);
+  shape.lineTo(width / 2, depth / 2);
+  shape.lineTo(-width / 2, depth / 2);
+  shape.lineTo(-width / 2, -depth / 2);
+
+  const hole = new THREE.Path();
+  const holeCenterY = -cutoutZ;
+  hole.moveTo(cutoutX - safeCutoutWidth / 2, holeCenterY - safeCutoutDepth / 2);
+  hole.lineTo(cutoutX - safeCutoutWidth / 2, holeCenterY + safeCutoutDepth / 2);
+  hole.lineTo(cutoutX + safeCutoutWidth / 2, holeCenterY + safeCutoutDepth / 2);
+  hole.lineTo(cutoutX + safeCutoutWidth / 2, holeCenterY - safeCutoutDepth / 2);
+  hole.lineTo(cutoutX - safeCutoutWidth / 2, holeCenterY - safeCutoutDepth / 2);
+  shape.holes.push(hole);
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: thickness,
+    bevelEnabled: true,
+    bevelSize,
+    bevelThickness: bevelSize * 0.68,
+    bevelSegments: 2,
+    curveSegments: 1,
+    UVGenerator: uvGenerator,
+  });
+
+  geometry.rotateX(-Math.PI / 2);
+  geometry.translate(0, -thickness / 2, 0);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function StoneTopWithCutout({
+  width,
+  depth,
+  thickness,
+  edgeRadius,
+  stoneName,
+  texture,
+  cutoutWidth,
+  cutoutDepth,
+  cutoutPosition,
+}: Required<Pick<StoneTopProps, 'cutoutWidth' | 'cutoutDepth'>> &
+  Omit<StoneTopProps, 'cutoutWidth' | 'cutoutDepth'>) {
+  const geometry = useMemo(
+    () =>
+      createStoneTopCutoutGeometry({
+        width,
+        depth,
+        thickness,
+        edgeRadius,
+        cutoutWidth,
+        cutoutDepth,
+        cutoutPosition,
+      }),
+    [cutoutDepth, cutoutPosition, cutoutWidth, depth, edgeRadius, thickness, width],
+  );
+
+  useEffect(() => () => geometry.dispose(), [geometry]);
+
+  return (
+    <>
+      <mesh castShadow receiveShadow>
+        <primitive object={geometry} attach="geometry" />
+        <StonePhysicalMaterial
+          stoneName={stoneName}
+          texture={texture}
+          colorOffset={-0.045}
+          roughnessOffset={0.06}
+        />
+      </mesh>
+
+      {!texture && (
+        <StoneVeins
+          width={width}
+          depth={depth}
+          thickness={thickness}
+          stoneName={stoneName}
+        />
+      )}
+    </>
+  );
+}
+
 export function StoneTop({
   width,
   depth,
@@ -70,7 +233,26 @@ export function StoneTop({
   edgeRadius,
   stoneName,
   texture,
+  cutoutWidth,
+  cutoutDepth,
+  cutoutPosition,
 }: StoneTopProps) {
+  if (cutoutWidth && cutoutDepth) {
+    return (
+      <StoneTopWithCutout
+        width={width}
+        depth={depth}
+        thickness={thickness}
+        edgeRadius={edgeRadius}
+        stoneName={stoneName}
+        texture={texture}
+        cutoutWidth={cutoutWidth}
+        cutoutDepth={cutoutDepth}
+        cutoutPosition={cutoutPosition}
+      />
+    );
+  }
+
   return (
     <>
       <mesh castShadow receiveShadow>

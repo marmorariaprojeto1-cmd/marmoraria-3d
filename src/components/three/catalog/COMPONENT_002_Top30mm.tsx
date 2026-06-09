@@ -12,6 +12,9 @@ export function Component002Top30mm({
   edgeRadius,
   stoneName,
   texture,
+  cutoutWidth,
+  cutoutDepth,
+  cutoutPosition,
 }: ThreeDRegisteredComponentProps) {
   return (
     <StoneTop
@@ -21,6 +24,9 @@ export function Component002Top30mm({
       edgeRadius={edgeRadius}
       stoneName={stoneName}
       texture={texture}
+      cutoutWidth={cutoutWidth}
+      cutoutDepth={cutoutDepth}
+      cutoutPosition={cutoutPosition}
     />
   );
 }

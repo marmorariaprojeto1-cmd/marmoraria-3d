@@ -29,6 +29,8 @@ export type ThreeDRegisteredComponentProps = {
   wetAreaWidth?: number;
   wetAreaDepth?: number;
   wetAreaPosition?: ThreeDPreviewProps['wetAreaPosition'];
+  cutoutWidth?: number;
+  cutoutDepth?: number;
   cutoutPosition?: ThreeDCutoutPosition;
 };
 

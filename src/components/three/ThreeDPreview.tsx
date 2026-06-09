@@ -125,6 +125,14 @@ function TextureLoadingSkeleton({ model }: { model: CountertopModel }) {
   );
 }
 
+function resolveCutoutDimensions(componentId?: string) {
+  if (componentId === 'COMPONENT_050') return { width: 0.5, depth: 0.4 };
+  if (componentId === 'COMPONENT_051') return { width: 0.56, depth: 0.34 };
+  if (componentId === 'COMPONENT_052') return { width: 0.49, depth: 0.35 };
+  if (componentId === 'COMPONENT_053') return { width: 0.56, depth: 0.48 };
+  return null;
+}
+
 function CountertopScene({
   topComponentId,
   wetAreaComponentId,
@@ -215,6 +223,16 @@ function CountertopScene({
   const groupY = model.t / 2 + model.skirtH + 0.018;
   const isLoadingResolvedTexture =
     Boolean(resolvedTextureUrl) && textureStatus === 'loading';
+  const cutoutDimensions =
+    cutoutEnabled && CutoutComponent
+      ? resolveCutoutDimensions(cutoutComponentId)
+      : null;
+  const cutoutWidth = cutoutDimensions
+    ? Math.min(cutoutDimensions.width, model.w * 0.72)
+    : undefined;
+  const cutoutDepth = cutoutDimensions
+    ? Math.min(cutoutDimensions.depth, model.d * 0.74)
+    : undefined;
 
   return (
     <>
@@ -238,6 +256,9 @@ function CountertopScene({
             edgeRadius={model.edgeRadius}
             stoneName={stoneName}
             texture={texture}
+            cutoutWidth={cutoutWidth}
+            cutoutDepth={cutoutDepth}
+            cutoutPosition={cutoutPosition}
           />
         ) : (
           <StoneTop
@@ -247,6 +268,9 @@ function CountertopScene({
             edgeRadius={model.edgeRadius}
             stoneName={stoneName}
             texture={texture}
+            cutoutWidth={cutoutWidth}
+            cutoutDepth={cutoutDepth}
+            cutoutPosition={cutoutPosition}
           />
         )}
 
@@ -282,6 +306,8 @@ function CountertopScene({
             edgeRadius={model.edgeRadius}
             stoneName={stoneName}
             texture={texture}
+            cutoutWidth={cutoutWidth}
+            cutoutDepth={cutoutDepth}
             cutoutPosition={cutoutPosition}
           />
         )}
