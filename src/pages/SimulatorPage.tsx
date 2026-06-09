@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { listCommercialProducts } from '../catalog/products';
+import { buildProductConfiguration } from '../catalog/products/pricing';
 import { ThreeDPreview } from '../components/three/ThreeDPreview';
 import { hasSupabaseConfig, supabase } from '../lib/supabase';
 import { calculateQuoteTotal, roundMoney } from '../services/quoteCalculator';
@@ -109,6 +111,7 @@ const emptyCatalog: SimulatorCatalog = {
 };
 
 const simulatorCompanyId = import.meta.env.VITE_SIMULATOR_COMPANY_ID;
+const commercialProducts = listCommercialProducts();
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('pt-BR', {
@@ -286,6 +289,7 @@ export function SimulatorPage() {
   const [customerCity, setCustomerCity] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [savedQuoteId, setSavedQuoteId] = useState('');
+  const [previewProductId, setPreviewProductId] = useState('');
 
   const canFetchCatalog = Boolean(hasSupabaseConfig && simulatorCompanyId);
 
@@ -339,6 +343,22 @@ export function SimulatorPage() {
   const selectedSink = catalog.sinks.find((sink) => sink.id === sinkId) ?? null;
   const selectedFinish =
     catalog.finishes.find((finish) => finish.id === finishId) ?? null;
+  const commercialProductConfigurations = useMemo(
+    () =>
+      commercialProducts.map((product) =>
+        buildProductConfiguration({
+          productId: product.id,
+          stoneId: product.allowedStones[0],
+          width: product.defaultDimensions.width,
+          depth: product.defaultDimensions.depth,
+        }),
+      ),
+    [],
+  );
+  const selectedPreviewProductConfiguration =
+    commercialProductConfigurations.find(
+      (configuration) => configuration.product.id === previewProductId,
+    ) ?? null;
 
   const dimensions = useMemo(
     () => ({
@@ -537,6 +557,92 @@ export function SimulatorPage() {
           Não foi possível carregar o WhatsApp da empresa ativa configurada.
         </div>
       )}
+
+      <div className="surface-card p-5 sm:p-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="page-kicker">Experimental</p>
+            <h2 className="text-xl font-semibold text-graphite">
+              Produtos prontos
+            </h2>
+          </div>
+          {selectedPreviewProductConfiguration && (
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => setPreviewProductId('')}
+            >
+              Voltar ao preview atual
+            </button>
+          )}
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {commercialProductConfigurations.map((configuration) => (
+            <button
+              key={configuration.product.id}
+              className={[
+                'rounded-lg border p-4 text-left shadow-sm transition hover:-translate-y-0.5',
+                previewProductId === configuration.product.id
+                  ? 'border-graphite bg-graphite text-white shadow-md'
+                  : 'border-stoneLine bg-white text-graphite hover:border-moss/50 hover:bg-stone-50',
+              ].join(' ')}
+              type="button"
+              onClick={() => setPreviewProductId(configuration.product.id)}
+            >
+              <span className="block text-xs font-semibold uppercase">
+                {configuration.product.category}
+              </span>
+              <span className="mt-2 block font-semibold">
+                {configuration.product.name}
+              </span>
+              <span
+                className={[
+                  'mt-1 block text-sm',
+                  previewProductId === configuration.product.id
+                    ? 'text-stone-100'
+                    : 'text-stone-600',
+                ].join(' ')}
+              >
+                {configuration.product.description}
+              </span>
+              <span
+                className={[
+                  'mt-3 block text-sm font-medium',
+                  previewProductId === configuration.product.id
+                    ? 'text-white'
+                    : 'text-graphite',
+                ].join(' ')}
+              >
+                {configuration.dimensions.width.toFixed(2)}m x{' '}
+                {configuration.dimensions.depth.toFixed(2)}m ·{' '}
+                {configuration.estimatedAreaM2.toFixed(2)} m²
+              </span>
+              <span
+                className={[
+                  'mt-2 block text-xs',
+                  previewProductId === configuration.product.id
+                    ? 'text-stone-100'
+                    : 'text-stone-500',
+                ].join(' ')}
+              >
+                {[
+                  configuration.composition.top.id ??
+                    configuration.composition.top.componentId,
+                  configuration.composition.backsplash?.id ??
+                    configuration.composition.backsplash?.componentId,
+                  configuration.composition.frontApron?.id ??
+                    configuration.composition.frontApron?.componentId,
+                  configuration.composition.cutout?.id ??
+                    configuration.composition.cutout?.componentId,
+                ]
+                  .filter(Boolean)
+                  .join(' + ')}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="surface-card p-4">
         <div className="mb-4 h-2 overflow-hidden rounded-full bg-stone-100">
@@ -993,14 +1099,20 @@ export function SimulatorPage() {
             </div>
           </div>
 
-          <ThreeDPreview
-            width={dimensions.width}
-            depth={dimensions.depth}
-            thickness={resolvedThickness}
-            stoneName={selectedStone?.name ?? 'Pedra não selecionada'}
-            stoneImageUrl={selectedStone?.image_url}
-            sinkEnabled={Boolean(selectedSink)}
-          />
+          {selectedPreviewProductConfiguration ? (
+            <ThreeDPreview
+              composition={selectedPreviewProductConfiguration.composition}
+            />
+          ) : (
+            <ThreeDPreview
+              width={dimensions.width}
+              depth={dimensions.depth}
+              thickness={resolvedThickness}
+              stoneName={selectedStone?.name ?? 'Pedra não selecionada'}
+              stoneImageUrl={selectedStone?.image_url}
+              sinkEnabled={Boolean(selectedSink)}
+            />
+          )}
 
           <div className="surface-card p-5">
             <h2 className="text-lg font-semibold text-graphite">
