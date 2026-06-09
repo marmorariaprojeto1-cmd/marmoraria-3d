@@ -1,7 +1,15 @@
+import { calculateBasePrice } from '../catalog/pricing/calculateBasePrice';
 import { listCommercialProducts } from '../catalog/products';
 import { buildProductConfiguration } from '../catalog/products/pricing';
 import { ThreeDPreview } from '../components/three/ThreeDPreview';
 import type { CountertopComposition } from '../types/threePreview';
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(value);
+}
 
 function formatDimensions({
   width,
@@ -35,6 +43,15 @@ const commercialProductConfigurations = commercialProducts.map((product) =>
     depth: product.defaultDimensions.depth,
   }),
 );
+const commercialProductPreviews = commercialProductConfigurations.map(
+  (configuration) => ({
+    configuration,
+    basePrice: calculateBasePrice({
+      stoneId: configuration.stoneId,
+      areaM2: configuration.estimatedAreaM2,
+    }),
+  }),
+);
 
 export function Preview3DPage() {
   return (
@@ -50,7 +67,7 @@ export function Preview3DPage() {
       </div>
 
       <div className="grid gap-8 xl:grid-cols-2">
-        {commercialProductConfigurations.map((configuration) => (
+        {commercialProductPreviews.map(({ configuration, basePrice }) => (
           <article key={configuration.product.id} className="space-y-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-moss">
@@ -84,6 +101,14 @@ export function Preview3DPage() {
               <div>
                 <dt className="font-semibold text-graphite">Area estimada</dt>
                 <dd>{configuration.estimatedAreaM2.toFixed(2)} m2</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-graphite">Preço por m²</dt>
+                <dd>{formatCurrency(basePrice.pricePerM2)}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-graphite">Preço base</dt>
+                <dd>{formatCurrency(basePrice.basePrice)}</dd>
               </div>
             </dl>
 
