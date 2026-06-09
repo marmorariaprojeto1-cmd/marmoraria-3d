@@ -40,6 +40,7 @@ const top30Backsplash50Apron40Composition: CountertopComposition = {
     type: 'straight',
   },
   wetArea: {
+    id: 'COMPONENT_010',
     componentId: 'COMPONENT_010',
     type: 'straight_wet_area',
     enabled: true,
@@ -89,8 +90,9 @@ const top30Backsplash100Apron60Composition: CountertopComposition = {
     type: 'rounded',
   },
   wetArea: {
-    componentId: 'COMPONENT_010',
-    type: 'straight_wet_area',
+    id: 'COMPONENT_011',
+    componentId: 'COMPONENT_011',
+    type: 'double_wet_area',
     enabled: true,
     width: 0.68,
     depth: 0.34,
@@ -134,8 +136,9 @@ const top30NoBacksplashNoApronComposition: CountertopComposition = {
     type: 'straight',
   },
   wetArea: {
-    componentId: 'COMPONENT_010',
-    type: 'straight_wet_area',
+    id: 'COMPONENT_012',
+    componentId: 'COMPONENT_012',
+    type: 'miter45_wet_area',
     enabled: true,
     width: 0.56,
     depth: 0.3,

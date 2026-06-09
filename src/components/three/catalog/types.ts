@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import type * as THREE from 'three';
+import type { ThreeDPreviewProps } from '../../../types/threePreview';
 import type { EdgeFinishVisualType } from '../utils/geometryUtils';
 
 export type ThreeDComponentCategory =
@@ -21,6 +22,9 @@ export type ThreeDRegisteredComponentProps = {
   skirtHeight?: number;
   skirtThickness?: number;
   visualEdgeFinish?: EdgeFinishVisualType;
+  wetAreaWidth?: number;
+  wetAreaDepth?: number;
+  wetAreaPosition?: ThreeDPreviewProps['wetAreaPosition'];
 };
 
 export type ThreeDRegisteredComponent = ComponentType<ThreeDRegisteredComponentProps>;

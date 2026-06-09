@@ -35,8 +35,6 @@ export function FrontApron({
   const frontFaceZ = depth / 2;
   const skirtCenterZ = insetCenterFromFront(depth, skirtThickness);
   const detailCenterZ = insetCenterFromFront(depth, 0.006);
-  const bottomDetailDepth = 0.026;
-  const bottomDetailCenterZ = insetCenterFromFront(depth, bottomDetailDepth);
   const doubleApronDetailDepth = skirtThickness * 0.72;
   const doubleApronDetailCenterZ = insetCenterFromFront(
     depth,
@@ -119,37 +117,6 @@ export function FrontApron({
           />
         </>
       )}
-
-      <mesh
-        receiveShadow
-        position={[
-          0,
-          -thickness / 2 - skirtHeight + 0.008,
-          bottomDetailCenterZ,
-        ]}
-      >
-        <RoundedBox
-          args={[width * 0.982, 0.018, bottomDetailDepth]}
-          radius={0.007}
-          smoothness={5}
-        >
-          <StoneMaterial
-            stoneName={stoneName}
-            texture={texture}
-            colorOffset={visualEdgeFinish === 'doubleApron' ? -0.035 : -0.065}
-            roughnessOffset={0.08}
-          />
-        </RoundedBox>
-      </mesh>
-
-      <StonePhotoSurface
-        texture={texture}
-        width={width * 0.995}
-        height={0.018}
-        repeatX={Math.max(1.4, width)}
-        repeatY={0.25}
-        position={[0, -thickness / 2 - skirtHeight + 0.008, frontFaceZ]}
-      />
     </>
   );
 }

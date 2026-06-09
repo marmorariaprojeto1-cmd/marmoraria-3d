@@ -27,6 +27,7 @@ export type ThreeDMaterialComponent = {
 };
 
 export type ThreeDWetAreaComponent = {
+  id?: string;
   componentId: string;
   type: string;
   enabled: boolean;

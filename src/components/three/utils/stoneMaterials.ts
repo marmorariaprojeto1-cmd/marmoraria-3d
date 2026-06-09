@@ -40,6 +40,8 @@ type StonePhotoSurfaceProps = {
   rotation?: [number, number, number];
 };
 
+export type SafeTextureStatus = 'idle' | 'loading' | 'ready' | 'failed';
+
 export function resolveStoneProfile(stoneName: string): StoneProfile {
   const n = stoneName.toLowerCase();
 
@@ -176,14 +178,20 @@ export function configureTexture(t: THREE.Texture, repeatX = 2.2, repeatY = 1.3)
 
 export function useSafeTexture(textureUrl: string | null) {
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  const [status, setStatus] = useState<SafeTextureStatus>(
+    textureUrl ? 'loading' : 'idle',
+  );
 
   useEffect(() => {
     if (!textureUrl) {
       setTexture(null);
+      setStatus('idle');
       return;
     }
 
     let active = true;
+    setTexture(null);
+    setStatus('loading');
     const loader = new THREE.TextureLoader();
     loader.load(
       textureUrl,
@@ -196,10 +204,13 @@ export function useSafeTexture(textureUrl: string | null) {
         const renderableTexture = createPowerOfTwoTexture(t);
         configureTexture(renderableTexture);
         setTexture(renderableTexture);
+        setStatus('ready');
       },
       undefined,
       () => {
-        if (active) setTexture(null);
+        if (!active) return;
+        setTexture(null);
+        setStatus('failed');
       },
     );
 
@@ -212,7 +223,7 @@ export function useSafeTexture(textureUrl: string | null) {
     };
   }, [textureUrl]);
 
-  return texture;
+  return { texture, status };
 }
 
 export function useRepeatedTexture(

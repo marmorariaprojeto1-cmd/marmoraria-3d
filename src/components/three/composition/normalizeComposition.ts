@@ -14,6 +14,7 @@ function resolveFrontApronHeightMm(componentId?: string, fallbackHeightMm = 0) {
 
 export type NormalizedThreeDPreviewProps = {
   topComponentId?: string;
+  wetAreaComponentId?: string;
   backsplashComponentId?: string;
   frontApronComponentId?: string;
   width: number;
@@ -40,11 +41,14 @@ export function normalizeComposition(
 ): NormalizedThreeDPreviewProps {
   if (props.composition) {
     const { composition } = props;
+    const wetAreaComponentId =
+      composition.wetArea?.id ?? composition.wetArea?.componentId;
     const backsplashComponentId = composition.backsplash?.id;
     const frontApronComponentId = composition.frontApron?.id;
 
     return {
       topComponentId: composition.top.id ?? composition.top.componentId,
+      wetAreaComponentId,
       backsplashComponentId,
       frontApronComponentId,
       width: composition.top.width,

@@ -18,6 +18,7 @@ import { WetArea } from './parts/WetArea';
 import {
   buildCountertopModel,
   resolveEdgeFinishVisualType,
+  type CountertopModel,
 } from './utils/geometryUtils';
 import {
   resolveUsableTextureUrl,
@@ -67,8 +68,66 @@ function AutoRotate({ targetRef }: { targetRef: React.RefObject<THREE.Group | nu
   return null;
 }
 
+function TextureLoadingSkeleton({ model }: { model: CountertopModel }) {
+  return (
+    <>
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[model.w, model.t, model.d]} />
+        <meshPhysicalMaterial
+          color="#d7d3ca"
+          roughness={0.34}
+          metalness={0.02}
+          clearcoat={0.35}
+          clearcoatRoughness={0.24}
+        />
+      </mesh>
+
+      {model.backsplashH > 0 && (
+        <mesh
+          castShadow
+          receiveShadow
+          position={[
+            0,
+            model.t / 2 + model.backsplashH / 2 - 0.006,
+            -model.d / 2 + model.backsplashT / 2,
+          ]}
+        >
+          <boxGeometry args={[model.w * 0.982, model.backsplashH, model.backsplashT]} />
+          <meshPhysicalMaterial
+            color="#cbc7bd"
+            roughness={0.38}
+            clearcoat={0.25}
+            clearcoatRoughness={0.3}
+          />
+        </mesh>
+      )}
+
+      {model.skirtEnabled && (
+        <mesh
+          castShadow
+          receiveShadow
+          position={[
+            0,
+            -model.t / 2 - model.skirtH / 2 + 0.006,
+            model.d / 2 - model.skirtT / 2,
+          ]}
+        >
+          <boxGeometry args={[model.w * 0.988, model.skirtH, model.skirtT]} />
+          <meshPhysicalMaterial
+            color="#c6c2b8"
+            roughness={0.4}
+            clearcoat={0.22}
+            clearcoatRoughness={0.32}
+          />
+        </mesh>
+      )}
+    </>
+  );
+}
+
 function CountertopScene({
   topComponentId,
+  wetAreaComponentId,
   backsplashComponentId,
   frontApronComponentId,
   width,
@@ -90,10 +149,13 @@ function CountertopScene({
 }: NormalizedThreeDPreviewProps) {
   const visualEdgeFinish = resolveEdgeFinishVisualType(edgeFinishType);
   const resolvedTextureUrl = resolveUsableTextureUrl(stoneName, stoneImageUrl);
-  const texture = useSafeTexture(resolvedTextureUrl);
+  const { texture, status: textureStatus } = useSafeTexture(resolvedTextureUrl);
   const groupRef = useRef<THREE.Group>(null);
   const topRegistryItem = topComponentId
     ? findThreeDComponent(topComponentId)
+    : null;
+  const wetAreaRegistryItem = wetAreaComponentId
+    ? findThreeDComponent(wetAreaComponentId)
     : null;
   const backsplashRegistryItem = backsplashComponentId
     ? findThreeDComponent(backsplashComponentId)
@@ -103,6 +165,10 @@ function CountertopScene({
     : null;
   const TopComponent =
     topRegistryItem?.category === 'top' ? topRegistryItem.component : null;
+  const WetAreaComponent =
+    wetAreaRegistryItem?.category === 'wetArea'
+      ? wetAreaRegistryItem.component
+      : null;
   const BacksplashComponent =
     backsplashRegistryItem?.category === 'backsplash'
       ? backsplashRegistryItem.component
@@ -137,6 +203,8 @@ function CountertopScene({
   );
 
   const groupY = model.t / 2 + model.skirtH + 0.018;
+  const isLoadingResolvedTexture =
+    Boolean(resolvedTextureUrl) && textureStatus === 'loading';
 
   return (
     <>
@@ -148,6 +216,10 @@ function CountertopScene({
       <group ref={groupRef} position={[0, groupY, 0]}>
         <AutoRotate targetRef={groupRef} />
 
+        {isLoadingResolvedTexture ? (
+          <TextureLoadingSkeleton model={model} />
+        ) : (
+          <>
         {TopComponent ? (
           <TopComponent
             width={model.w}
@@ -168,15 +240,29 @@ function CountertopScene({
           />
         )}
 
-        <WetArea
-          width={model.w}
-          depth={model.d}
-          thickness={model.t}
-          enabled={wetAreaEnabled}
-          wetAreaWidth={wetAreaWidth}
-          wetAreaDepth={wetAreaDepth}
-          wetAreaPosition={wetAreaPosition}
-        />
+        {wetAreaEnabled && WetAreaComponent ? (
+          <WetAreaComponent
+            width={model.w}
+            depth={model.d}
+            thickness={model.t}
+            edgeRadius={model.edgeRadius}
+            stoneName={stoneName}
+            texture={texture}
+            wetAreaWidth={wetAreaWidth}
+            wetAreaDepth={wetAreaDepth}
+            wetAreaPosition={wetAreaPosition}
+          />
+        ) : (
+          <WetArea
+            width={model.w}
+            depth={model.d}
+            thickness={model.t}
+            enabled={wetAreaEnabled}
+            wetAreaWidth={wetAreaWidth}
+            wetAreaDepth={wetAreaDepth}
+            wetAreaPosition={wetAreaPosition}
+          />
+        )}
 
         <EdgeFinish
           width={model.w}
@@ -279,6 +365,8 @@ function CountertopScene({
               depthWrite={false}
             />
           </mesh>
+        )}
+          </>
         )}
       </group>
 
