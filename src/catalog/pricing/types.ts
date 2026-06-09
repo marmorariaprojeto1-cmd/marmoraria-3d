@@ -1,3 +1,6 @@
+import type { CommercialProduct, CommercialProductDimensions } from '../products/types';
+import type { CountertopComposition } from '../../types/threePreview';
+
 export type StoneBasePrice = {
   stoneId: string;
   stoneName: string;
@@ -45,4 +48,34 @@ export type CalculateCommercialEstimateInput = {
   stoneId: string;
   width: number;
   depth: number;
+};
+
+export type CommercialEstimate = {
+  product: CommercialProduct;
+  stoneId: string;
+  composition: CountertopComposition;
+  dimensions: CommercialProductDimensions;
+  estimatedAreaM2: number;
+  basePrice: BasePriceResult;
+  addons: ComponentAddonItem[];
+  totalAddons: number;
+  estimatedTotal: number;
+};
+
+export type EstimateBreakdownItem = {
+  label: string;
+  value: string;
+};
+
+export type EstimateBreakdown = {
+  areaM2: number;
+  stonePrice: number;
+  stoneSubtotal: number;
+  backsplashPrice: number;
+  apronPrice: number;
+  wetAreaPrice: number;
+  cutoutPrice: number;
+  addonsSubtotal: number;
+  estimatedTotal: number;
+  breakdownItems: EstimateBreakdownItem[];
 };

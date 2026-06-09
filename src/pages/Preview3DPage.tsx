@@ -1,4 +1,7 @@
-import { calculateCommercialEstimate } from '../catalog/pricing';
+import {
+  buildEstimateBreakdown,
+  calculateCommercialEstimate,
+} from '../catalog/pricing';
 import { listCommercialProducts } from '../catalog/products';
 import { ThreeDPreview } from '../components/three/ThreeDPreview';
 import type { CountertopComposition } from '../types/threePreview';
@@ -42,6 +45,10 @@ const commercialProductEstimates = commercialProducts.map((product) =>
     depth: product.defaultDimensions.depth,
   }),
 );
+const commercialProductPreviews = commercialProductEstimates.map((estimate) => ({
+  estimate,
+  breakdown: buildEstimateBreakdown({ commercialEstimate: estimate }),
+}));
 
 export function Preview3DPage() {
   return (
@@ -60,7 +67,7 @@ export function Preview3DPage() {
       </div>
 
       <div className="grid gap-8 xl:grid-cols-2">
-        {commercialProductEstimates.map((estimate) => (
+        {commercialProductPreviews.map(({ estimate, breakdown }) => (
           <article key={estimate.product.id} className="space-y-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-moss">
@@ -118,6 +125,36 @@ export function Preview3DPage() {
                 <dd>{formatCurrency(estimate.estimatedTotal)}</dd>
               </div>
             </dl>
+
+            <div className="rounded-lg border border-stoneLine bg-stone-50 p-4">
+              <h3 className="text-sm font-semibold uppercase text-stone-600">
+                Resumo Comercial
+              </h3>
+              <dl className="mt-3 grid gap-2 text-sm text-stone-700 sm:grid-cols-2">
+                <div>
+                  <dt className="font-semibold text-graphite">Área</dt>
+                  <dd>{breakdown.areaM2.toFixed(2)} m²</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-graphite">Pedra</dt>
+                  <dd>{estimate.composition.material.stoneName}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-graphite">Preço m²</dt>
+                  <dd>{formatCurrency(breakdown.stonePrice)}</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-graphite">Adicionais</dt>
+                  <dd>{formatCurrency(breakdown.addonsSubtotal)}</dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="font-semibold text-graphite">Total</dt>
+                  <dd className="text-lg font-bold text-graphite">
+                    {formatCurrency(breakdown.estimatedTotal)}
+                  </dd>
+                </div>
+              </dl>
+            </div>
 
             <ThreeDPreview composition={estimate.composition} />
           </article>

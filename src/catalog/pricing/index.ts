@@ -9,13 +9,20 @@ export {
 export { calculateBasePrice } from './calculateBasePrice';
 export { calculateComponentAddons } from './calculateComponentAddons';
 export { calculateCommercialEstimate } from './calculateCommercialEstimate';
+export {
+  buildEstimateBreakdown,
+  formatEstimateBreakdown,
+} from './estimateBreakdown';
 export type {
   BasePriceResult,
   CalculateBasePriceInput,
   CalculateCommercialEstimateInput,
+  CommercialEstimate,
   ComponentAddonItem,
   ComponentAddonPrice,
   ComponentAddonsResult,
   ComponentPricingType,
+  EstimateBreakdown,
+  EstimateBreakdownItem,
   StoneBasePrice,
 } from './types';

@@ -1,14 +1,17 @@
 import { buildProductConfiguration } from '../products/pricing';
 import { calculateBasePrice } from './calculateBasePrice';
 import { calculateComponentAddons } from './calculateComponentAddons';
-import type { CalculateCommercialEstimateInput } from './types';
+import type {
+  CalculateCommercialEstimateInput,
+  CommercialEstimate,
+} from './types';
 
 export function calculateCommercialEstimate({
   productId,
   stoneId,
   width,
   depth,
-}: CalculateCommercialEstimateInput) {
+}: CalculateCommercialEstimateInput): CommercialEstimate {
   const configuration = buildProductConfiguration({
     productId,
     stoneId,
