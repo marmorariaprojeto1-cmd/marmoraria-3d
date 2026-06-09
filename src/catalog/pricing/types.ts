@@ -50,6 +50,11 @@ export type CalculateCommercialEstimateInput = {
   depth: number;
 };
 
+export type CalculateCommercialEstimateFromConfigurationInput =
+  CalculateCommercialEstimateInput & {
+    composition: CountertopComposition;
+  };
+
 export type CommercialEstimate = {
   product: CommercialProduct;
   stoneId: string;

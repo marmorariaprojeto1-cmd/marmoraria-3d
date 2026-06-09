@@ -2,22 +2,16 @@ import { buildProductConfiguration } from '../products/pricing';
 import { calculateBasePrice } from './calculateBasePrice';
 import { calculateComponentAddons } from './calculateComponentAddons';
 import type {
+  CalculateCommercialEstimateFromConfigurationInput,
   CalculateCommercialEstimateInput,
   CommercialEstimate,
 } from './types';
 
-export function calculateCommercialEstimate({
-  productId,
-  stoneId,
-  width,
-  depth,
-}: CalculateCommercialEstimateInput): CommercialEstimate {
-  const configuration = buildProductConfiguration({
-    productId,
-    stoneId,
-    width,
-    depth,
-  });
+function buildCommercialEstimate({
+  configuration,
+}: {
+  configuration: ReturnType<typeof buildProductConfiguration>;
+}): CommercialEstimate {
   const basePrice = calculateBasePrice({
     stoneId: configuration.stoneId,
     areaM2: configuration.estimatedAreaM2,
@@ -35,4 +29,55 @@ export function calculateCommercialEstimate({
     totalAddons: addons.totalAddons,
     estimatedTotal: basePrice.basePrice + addons.totalAddons,
   };
+}
+
+export function calculateCommercialEstimate({
+  productId,
+  stoneId,
+  width,
+  depth,
+}: CalculateCommercialEstimateInput): CommercialEstimate {
+  const configuration = buildProductConfiguration({
+    productId,
+    stoneId,
+    width,
+    depth,
+  });
+
+  return buildCommercialEstimate({ configuration });
+}
+
+export function calculateCommercialEstimateFromConfiguration({
+  productId,
+  stoneId,
+  width,
+  depth,
+  composition,
+}: CalculateCommercialEstimateFromConfigurationInput): CommercialEstimate {
+  const configuration = buildProductConfiguration({
+    productId,
+    stoneId,
+    width,
+    depth,
+  });
+
+  return buildCommercialEstimate({
+    configuration: {
+      ...configuration,
+      composition: {
+        ...composition,
+        top: {
+          ...composition.top,
+          width: configuration.dimensions.width,
+          depth: configuration.dimensions.depth,
+          thicknessMm: configuration.dimensions.thicknessMm,
+        },
+        material: configuration.composition.material,
+        metadata: {
+          ...composition.metadata,
+          source: 'commercial-product-template-customization',
+        },
+      },
+    },
+  });
 }

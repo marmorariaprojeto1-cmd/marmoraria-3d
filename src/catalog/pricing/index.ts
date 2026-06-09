@@ -8,7 +8,10 @@ export {
 } from './componentPrices';
 export { calculateBasePrice } from './calculateBasePrice';
 export { calculateComponentAddons } from './calculateComponentAddons';
-export { calculateCommercialEstimate } from './calculateCommercialEstimate';
+export {
+  calculateCommercialEstimate,
+  calculateCommercialEstimateFromConfiguration,
+} from './calculateCommercialEstimate';
 export {
   buildEstimateBreakdown,
   formatEstimateBreakdown,
@@ -20,6 +23,7 @@ export {
 export type {
   BasePriceResult,
   CalculateBasePriceInput,
+  CalculateCommercialEstimateFromConfigurationInput,
   CalculateCommercialEstimateInput,
   CommercialEstimate,
   ComponentAddonItem,

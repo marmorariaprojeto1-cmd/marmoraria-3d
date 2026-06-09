@@ -3,13 +3,22 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   buildEstimateBreakdown,
   calculateCommercialEstimate,
+  calculateCommercialEstimateFromConfiguration,
   formatCompositionComponents,
+  listStonePrices,
 } from '../catalog/pricing';
 import { listCommercialProducts } from '../catalog/products';
 import { ThreeDPreview } from '../components/three/ThreeDPreview';
 import { hasSupabaseConfig, supabase } from '../lib/supabase';
 import { calculateQuoteTotal, roundMoney } from '../services/quoteCalculator';
 import type { FinishPricingType } from '../types/quote';
+import type {
+  CountertopComposition,
+  ThreeDBacksplashComponent,
+  ThreeDCutoutComponent,
+  ThreeDFrontApronComponent,
+  ThreeDWetAreaComponent,
+} from '../types/threePreview';
 
 type ProductCatalogItem = {
   id: string;
@@ -88,6 +97,22 @@ type OptionCardProps = {
   onClick: () => void;
 };
 
+type CommercialTemplateCustomization = {
+  productId: string;
+  stoneId: string;
+  width: string;
+  depth: string;
+  backsplashId: string;
+  frontApronId: string;
+  wetAreaId: string;
+  cutoutId: string;
+};
+
+type ComponentOption = {
+  id: string;
+  label: string;
+};
+
 const simulatorSteps = [
   'Ambiente',
   'Produto',
@@ -116,12 +141,151 @@ const emptyCatalog: SimulatorCatalog = {
 
 const simulatorCompanyId = import.meta.env.VITE_SIMULATOR_COMPANY_ID;
 const commercialProducts = listCommercialProducts();
+const commercialStones = listStonePrices();
+
+const backsplashOptions: ComponentOption[] = [
+  { id: 'COMPONENT_020', label: 'Sem frontão' },
+  { id: 'COMPONENT_021', label: 'Frontão 50 mm' },
+  { id: 'COMPONENT_022', label: 'Frontão 100 mm' },
+];
+
+const frontApronOptions: ComponentOption[] = [
+  { id: 'COMPONENT_030', label: 'Sem saia' },
+  { id: 'COMPONENT_031', label: 'Saia 40 mm' },
+  { id: 'COMPONENT_032', label: 'Saia 60 mm' },
+];
+
+const wetAreaOptions: ComponentOption[] = [
+  { id: '', label: 'Sem área molhada' },
+  { id: 'COMPONENT_010', label: 'Área molhada reta' },
+  { id: 'COMPONENT_011', label: 'Área molhada dupla' },
+  { id: 'COMPONENT_012', label: 'Área molhada 45°' },
+];
+
+const cutoutOptions: ComponentOption[] = [
+  { id: '', label: 'Sem recorte' },
+  { id: 'COMPONENT_050', label: 'Recorte Cuba 500x400' },
+  { id: 'COMPONENT_051', label: 'Recorte Cuba 560x340' },
+  { id: 'COMPONENT_052', label: 'Recorte Cooktop 490x350' },
+  { id: 'COMPONENT_053', label: 'Recorte Cooktop 560x480' },
+];
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   }).format(value);
+}
+
+function getCompositionComponentId(
+  component?: { id?: string; componentId?: string } | null,
+) {
+  return component?.id ?? component?.componentId ?? '';
+}
+
+function getBacksplashComponent(
+  componentId: string,
+): ThreeDBacksplashComponent {
+  const enabled = componentId !== 'COMPONENT_020';
+  const heightMm = componentId === 'COMPONENT_022' ? 100 : componentId === 'COMPONENT_021' ? 50 : 0;
+
+  return {
+    id: componentId,
+    componentId,
+    type: enabled ? 'back_backsplash' : 'no_backsplash',
+    enabled,
+    heightMm,
+    leftEnabled: false,
+    rightEnabled: false,
+  };
+}
+
+function getFrontApronComponent(
+  componentId: string,
+): ThreeDFrontApronComponent {
+  const enabled = componentId !== 'COMPONENT_030';
+  const heightMm = componentId === 'COMPONENT_032' ? 60 : componentId === 'COMPONENT_031' ? 40 : 0;
+
+  return {
+    id: componentId,
+    componentId,
+    type: enabled ? 'front_apron' : 'no_front_apron',
+    enabled,
+    heightMm,
+  };
+}
+
+function getWetAreaComponent(componentId: string): ThreeDWetAreaComponent | undefined {
+  if (!componentId) {
+    return undefined;
+  }
+
+  return {
+    id: componentId,
+    componentId,
+    type:
+      componentId === 'COMPONENT_012'
+        ? 'wet_area_45'
+        : componentId === 'COMPONENT_011'
+          ? 'wet_area_double'
+          : 'wet_area_straight',
+    enabled: true,
+  };
+}
+
+function getCutoutComponent(componentId: string): ThreeDCutoutComponent | undefined {
+  if (!componentId) {
+    return undefined;
+  }
+
+  return {
+    id: componentId,
+    componentId,
+    type:
+      componentId === 'COMPONENT_053'
+        ? 'cooktop_cutout_560x480'
+        : componentId === 'COMPONENT_052'
+          ? 'cooktop_cutout_490x350'
+          : componentId === 'COMPONENT_051'
+            ? 'sink_cutout_560x340'
+            : 'sink_cutout_500x400',
+    enabled: true,
+  };
+}
+
+function buildCustomizedComposition({
+  baseComposition,
+  customization,
+}: {
+  baseComposition: CountertopComposition;
+  customization: CommercialTemplateCustomization;
+}): CountertopComposition {
+  return {
+    ...baseComposition,
+    backsplash: getBacksplashComponent(customization.backsplashId),
+    frontApron: getFrontApronComponent(customization.frontApronId),
+    wetArea: getWetAreaComponent(customization.wetAreaId),
+    cutout: getCutoutComponent(customization.cutoutId),
+    metadata: {
+      ...baseComposition.metadata,
+      source: 'commercial-product-template-customization',
+    },
+  };
+}
+
+function buildDefaultCustomization(
+  estimate: ReturnType<typeof calculateCommercialEstimate>,
+): CommercialTemplateCustomization {
+  return {
+    productId: estimate.product.id,
+    stoneId: estimate.stoneId,
+    width: estimate.dimensions.width.toFixed(2),
+    depth: estimate.dimensions.depth.toFixed(2),
+    backsplashId: getCompositionComponentId(estimate.composition.backsplash),
+    frontApronId: getCompositionComponentId(estimate.composition.frontApron),
+    wetAreaId: getCompositionComponentId(estimate.composition.wetArea),
+    cutoutId: getCompositionComponentId(estimate.composition.cutout),
+  };
 }
 
 function OptionCard({ title, description, selected, onClick }: OptionCardProps) {
@@ -294,6 +458,8 @@ export function SimulatorPage() {
   const [customerEmail, setCustomerEmail] = useState('');
   const [savedQuoteId, setSavedQuoteId] = useState('');
   const [previewProductId, setPreviewProductId] = useState('');
+  const [templateCustomization, setTemplateCustomization] =
+    useState<CommercialTemplateCustomization | null>(null);
 
   const canFetchCatalog = Boolean(hasSupabaseConfig && simulatorCompanyId);
 
@@ -360,14 +526,59 @@ export function SimulatorPage() {
     [],
   );
   const selectedPreviewProductEstimate =
-    commercialProductEstimates.find(
-      (estimate) => estimate.product.id === previewProductId,
-    ) ?? null;
+    useMemo(() => {
+      if (!templateCustomization) {
+        return null;
+      }
+
+      const defaultEstimate = commercialProductEstimates.find(
+        (estimate) => estimate.product.id === templateCustomization.productId,
+      );
+
+      if (!defaultEstimate) {
+        return null;
+      }
+
+      const composition = buildCustomizedComposition({
+        baseComposition: defaultEstimate.composition,
+        customization: templateCustomization,
+      });
+
+      return calculateCommercialEstimateFromConfiguration({
+        productId: templateCustomization.productId,
+        stoneId: templateCustomization.stoneId,
+        width: Number(templateCustomization.width) || 0,
+        depth: Number(templateCustomization.depth) || 0,
+        composition,
+      });
+    }, [commercialProductEstimates, templateCustomization]);
   const selectedPreviewProductBreakdown = selectedPreviewProductEstimate
     ? buildEstimateBreakdown({
         commercialEstimate: selectedPreviewProductEstimate,
       })
     : null;
+  const selectedTemplateProduct =
+    commercialProducts.find((product) => product.id === previewProductId) ?? null;
+
+  function handleSelectCommercialTemplate(
+    estimate: ReturnType<typeof calculateCommercialEstimate>,
+  ) {
+    setPreviewProductId(estimate.product.id);
+    setTemplateCustomization(buildDefaultCustomization(estimate));
+  }
+
+  function handleClearCommercialTemplate() {
+    setPreviewProductId('');
+    setTemplateCustomization(null);
+  }
+
+  function updateTemplateCustomization(
+    updates: Partial<CommercialTemplateCustomization>,
+  ) {
+    setTemplateCustomization((current) =>
+      current ? { ...current, ...updates } : current,
+    );
+  }
 
   const dimensions = useMemo(
     () => ({
@@ -579,7 +790,7 @@ export function SimulatorPage() {
             <button
               className="secondary-button"
               type="button"
-              onClick={() => setPreviewProductId('')}
+              onClick={handleClearCommercialTemplate}
             >
               Voltar ao preview atual
             </button>
@@ -597,7 +808,7 @@ export function SimulatorPage() {
                   : 'border-stoneLine bg-white text-graphite hover:border-moss/50 hover:bg-stone-50',
               ].join(' ')}
               type="button"
-              onClick={() => setPreviewProductId(estimate.product.id)}
+              onClick={() => handleSelectCommercialTemplate(estimate)}
             >
               <span className="block text-xs font-semibold uppercase">
                 {estimate.product.category}
@@ -640,6 +851,160 @@ export function SimulatorPage() {
             </button>
           ))}
         </div>
+
+        {selectedTemplateProduct && templateCustomization && (
+          <div className="mt-6 rounded-lg border border-stoneLine bg-stone-50 p-4 sm:p-5">
+            <div className="flex flex-col gap-1">
+              <h3 className="text-lg font-semibold text-graphite">
+                Personalizar template
+              </h3>
+              <p className="text-sm text-stone-600">
+                Ajustes locais para visualizar variações de{' '}
+                {selectedTemplateProduct.name}. Não salva no banco nem altera o
+                orçamento final.
+              </p>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-stone-700">
+                  Largura (m)
+                </span>
+                <input
+                  className="field-input"
+                  min="0"
+                  step="0.01"
+                  type="number"
+                  value={templateCustomization.width}
+                  onChange={(event) =>
+                    updateTemplateCustomization({ width: event.target.value })
+                  }
+                />
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-stone-700">
+                  Profundidade (m)
+                </span>
+                <input
+                  className="field-input"
+                  min="0"
+                  step="0.01"
+                  type="number"
+                  value={templateCustomization.depth}
+                  onChange={(event) =>
+                    updateTemplateCustomization({ depth: event.target.value })
+                  }
+                />
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-stone-700">
+                  Pedra
+                </span>
+                <select
+                  className="field-input"
+                  value={templateCustomization.stoneId}
+                  onChange={(event) =>
+                    updateTemplateCustomization({ stoneId: event.target.value })
+                  }
+                >
+                  {commercialStones.map((stone) => (
+                    <option key={stone.stoneId} value={stone.stoneId}>
+                      {stone.stoneName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-stone-700">
+                  Frontão
+                </span>
+                <select
+                  className="field-input"
+                  value={templateCustomization.backsplashId}
+                  onChange={(event) =>
+                    updateTemplateCustomization({
+                      backsplashId: event.target.value,
+                    })
+                  }
+                >
+                  {backsplashOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-stone-700">
+                  Saia
+                </span>
+                <select
+                  className="field-input"
+                  value={templateCustomization.frontApronId}
+                  onChange={(event) =>
+                    updateTemplateCustomization({
+                      frontApronId: event.target.value,
+                    })
+                  }
+                >
+                  {frontApronOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-stone-700">
+                  Área molhada
+                </span>
+                <select
+                  className="field-input"
+                  value={templateCustomization.wetAreaId}
+                  onChange={(event) =>
+                    updateTemplateCustomization({ wetAreaId: event.target.value })
+                  }
+                >
+                  {wetAreaOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block space-y-2 md:col-span-2">
+                <span className="text-sm font-medium text-stone-700">
+                  Recorte
+                </span>
+                <select
+                  className="field-input"
+                  value={templateCustomization.cutoutId}
+                  onChange={(event) =>
+                    updateTemplateCustomization({ cutoutId: event.target.value })
+                  }
+                >
+                  {cutoutOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {selectedPreviewProductEstimate && (
+              <p className="mt-4 text-sm font-medium text-stone-700">
+                {formatCompositionComponents(selectedPreviewProductEstimate.composition)}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="surface-card p-4">
