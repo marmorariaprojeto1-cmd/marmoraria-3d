@@ -32,7 +32,7 @@ export function JoinShadow({
       <meshBasicMaterial
         color="#191715"
         transparent
-        opacity={0.28}
+        opacity={0.18}
         depthWrite={false}
       />
     </mesh>
@@ -126,7 +126,7 @@ function HalfBullnoseFrontEdge({
         <meshBasicMaterial
           color="#151311"
           transparent
-          opacity={0.07}
+          opacity={0.045}
           depthWrite={false}
         />
       </mesh>
@@ -172,7 +172,7 @@ function Miter45FrontEdge({
         <meshBasicMaterial
           color="#f7f3ea"
           transparent
-          opacity={0.08}
+          opacity={0.04}
           depthWrite={false}
         />
       </mesh>
@@ -192,7 +192,7 @@ function StraightFrontEdge({
         <meshBasicMaterial
           color="#f7f3ea"
           transparent
-          opacity={0.08}
+          opacity={0.04}
           depthWrite={false}
         />
       </mesh>
@@ -201,7 +201,7 @@ function StraightFrontEdge({
         <meshBasicMaterial
           color="#1b1714"
           transparent
-          opacity={0.12}
+          opacity={0.08}
           depthWrite={false}
         />
       </mesh>
@@ -291,7 +291,7 @@ export function EdgeFinish({
         <meshPhysicalMaterial
           color="#f7f3ea"
           transparent
-          opacity={config.faceHighlightOpacity * 0.45}
+          opacity={config.faceHighlightOpacity * 0.28}
           roughness={0.08}
           clearcoat={1}
           depthWrite={false}
