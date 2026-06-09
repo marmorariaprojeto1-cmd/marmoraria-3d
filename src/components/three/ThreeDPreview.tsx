@@ -159,6 +159,14 @@ function CountertopScene({
   cutoutPosition,
 }: NormalizedThreeDPreviewProps) {
   const visualEdgeFinish = resolveEdgeFinishVisualType(edgeFinishType);
+  const hasExplicitNoFrontApron = frontApronComponentId === 'COMPONENT_030';
+  const effectiveFrontApronEnabled = hasExplicitNoFrontApron
+    ? false
+    : frontApronEnabled;
+  const effectiveVisualEdgeFinish =
+    hasExplicitNoFrontApron && visualEdgeFinish === 'doubleApron'
+      ? 'straight'
+      : visualEdgeFinish;
   const resolvedTextureUrl = resolveUsableTextureUrl(stoneName, stoneImageUrl);
   const { texture, status: textureStatus } = useSafeTexture(resolvedTextureUrl);
   const groupRef = useRef<THREE.Group>(null);
@@ -204,18 +212,18 @@ function CountertopScene({
         thickness,
         backsplashEnabled,
         backsplashHeightCm,
-        frontApronEnabled,
+        frontApronEnabled: effectiveFrontApronEnabled,
         frontApronHeightCm,
-        visualEdgeFinish,
+        visualEdgeFinish: effectiveVisualEdgeFinish,
       }),
     [
       backsplashEnabled,
       backsplashHeightCm,
       depth,
-      frontApronEnabled,
+      effectiveFrontApronEnabled,
       frontApronHeightCm,
       thickness,
-      visualEdgeFinish,
+      effectiveVisualEdgeFinish,
       width,
     ],
   );
@@ -318,7 +326,7 @@ function CountertopScene({
           thickness={model.t}
           stoneName={stoneName}
           texture={texture}
-          edgeFinishType={visualEdgeFinish}
+          edgeFinishType={effectiveVisualEdgeFinish}
         />
 
         {BacksplashComponent ? (
@@ -385,7 +393,7 @@ function CountertopScene({
             edgeRadius={model.edgeRadius}
             stoneName={stoneName}
             texture={texture}
-            visualEdgeFinish={visualEdgeFinish}
+            visualEdgeFinish={effectiveVisualEdgeFinish}
           />
         ) : (
           model.skirtEnabled && (
@@ -398,7 +406,7 @@ function CountertopScene({
             edgeRadius={model.edgeRadius}
             stoneName={stoneName}
             texture={texture}
-            visualEdgeFinish={visualEdgeFinish}
+            visualEdgeFinish={effectiveVisualEdgeFinish}
           />
           )
         )}

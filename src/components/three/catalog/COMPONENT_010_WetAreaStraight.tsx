@@ -24,7 +24,7 @@ export function Component010WetAreaStraight({
         <meshPhysicalMaterial
           color="#ffffff"
           transparent
-          opacity={0.11}
+          opacity={0.045}
           roughness={0.08}
           metalness={0}
           clearcoat={0.95}
@@ -44,7 +44,7 @@ export function Component010WetAreaStraight({
         <meshBasicMaterial
           color="#2d2924"
           transparent
-          opacity={0.14}
+          opacity={0.08}
           depthWrite={false}
         />
       </mesh>

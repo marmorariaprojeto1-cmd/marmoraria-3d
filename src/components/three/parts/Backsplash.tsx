@@ -67,11 +67,11 @@ export function Backsplash({
       />
 
       <JoinShadow
-        width={width * 0.96}
+        width={width * 0.9}
         position={[
           0,
           thickness / 2 + 0.004,
-          backsplashInnerFaceZ + 0.003,
+          backsplashInnerFaceZ + 0.001,
         ]}
       />
     </>

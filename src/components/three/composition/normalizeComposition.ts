@@ -17,6 +17,18 @@ function resolveFrontApronHeightMm(componentId?: string, fallbackHeightMm = 0) {
   return fallbackHeightMm;
 }
 
+function centimetersToMeters(value: number) {
+  return value / 100;
+}
+
+function millimetersToMeters(value: number) {
+  return value / 1000;
+}
+
+function normalizeLegacyThicknessToMeters(value = 3) {
+  return value > 1 ? centimetersToMeters(value) : value;
+}
+
 export type NormalizedThreeDPreviewProps = {
   topComponentId?: string;
   wetAreaComponentId?: string;
@@ -53,8 +65,10 @@ export function normalizeComposition(
       composition.wetArea?.id ?? composition.wetArea?.componentId;
     const cutoutComponentId =
       composition.cutout?.id ?? composition.cutout?.componentId;
-    const backsplashComponentId = composition.backsplash?.id;
-    const frontApronComponentId = composition.frontApron?.id;
+    const backsplashComponentId =
+      composition.backsplash?.id ?? composition.backsplash?.componentId;
+    const frontApronComponentId =
+      composition.frontApron?.id ?? composition.frontApron?.componentId;
 
     return {
       topComponentId: composition.top.id ?? composition.top.componentId,
@@ -64,7 +78,7 @@ export function normalizeComposition(
       frontApronComponentId,
       width: composition.top.width,
       depth: composition.top.depth,
-      thickness: composition.top.thicknessMm / 10,
+      thickness: millimetersToMeters(composition.top.thicknessMm),
       stoneName: composition.material.stoneName,
       stoneImageUrl: composition.material.stoneImageUrl ?? props.stoneImageUrl,
       sinkEnabled: props.sinkEnabled,
@@ -101,7 +115,7 @@ export function normalizeComposition(
   return {
     width: props.width ?? 0.8,
     depth: props.depth ?? 0.42,
-    thickness: props.thickness ?? 3,
+    thickness: normalizeLegacyThicknessToMeters(props.thickness),
     stoneName: props.stoneName ?? 'Pedra não selecionada',
     stoneImageUrl: props.stoneImageUrl,
     sinkEnabled: props.sinkEnabled,

@@ -25,7 +25,7 @@ export function Component011WetAreaDouble({
         <meshPhysicalMaterial
           color="#ffffff"
           transparent
-          opacity={0.1}
+          opacity={0.04}
           roughness={0.08}
           metalness={0}
           clearcoat={0.95}
@@ -47,7 +47,7 @@ export function Component011WetAreaDouble({
           <meshBasicMaterial
             color="#2d2924"
             transparent
-            opacity={0.13}
+            opacity={0.075}
             depthWrite={false}
           />
         </mesh>

@@ -120,7 +120,7 @@ export function buildCountertopModel({
 }): CountertopModel {
   const w = Math.min(3.6, Math.max(0.8, width || 0.8));
   const d = Math.min(1.75, Math.max(0.42, depth || 0.42));
-  const t = Math.min(0.26, Math.max(0.09, thickness / 18));
+  const t = Math.min(0.08, Math.max(0.015, thickness || 0.03));
   const edgeRadius =
     visualEdgeFinish === 'straight'
       ? 0.006

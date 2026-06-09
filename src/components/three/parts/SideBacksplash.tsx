@@ -40,7 +40,7 @@ export function SideBacksplash({
       position={[
         sideCenterX,
         thickness / 2 + backsplashHeight / 2 - 0.006,
-        -backsplashThickness / 2,
+        backsplashThickness / 2,
       ]}
     >
       <RoundedBox

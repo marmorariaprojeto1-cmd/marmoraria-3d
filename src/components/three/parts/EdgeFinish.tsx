@@ -32,7 +32,7 @@ export function JoinShadow({
       <meshBasicMaterial
         color="#191715"
         transparent
-        opacity={0.18}
+        opacity={0.1}
         depthWrite={false}
       />
     </mesh>

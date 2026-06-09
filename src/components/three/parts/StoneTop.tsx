@@ -92,7 +92,7 @@ function createStoneTopCutoutGeometry({
   const maxZ = Math.max(0, depth / 2 - safeCutoutDepth / 2 - margin);
   const cutoutX = THREE.MathUtils.clamp(cutoutPosition?.x ?? 0, -maxX, maxX);
   const cutoutZ = THREE.MathUtils.clamp(cutoutPosition?.z ?? 0, -maxZ, maxZ);
-  const bevelSize = Math.min(0.008, edgeRadius * 0.82, thickness * 0.18);
+  const bevelSize = Math.min(0.002, edgeRadius * 0.35, thickness * 0.06);
   const uvScale = 0.72;
   const uvGenerator = {
     generateTopUV(
@@ -162,7 +162,7 @@ function createStoneTopCutoutGeometry({
     depth: thickness,
     bevelEnabled: true,
     bevelSize,
-    bevelThickness: bevelSize * 0.68,
+    bevelThickness: bevelSize * 0.5,
     bevelSegments: 2,
     curveSegments: 1,
     UVGenerator: uvGenerator,
