@@ -10,14 +10,19 @@ import { findThreeDComponent } from './catalog';
 import { Backsplash } from './parts/Backsplash';
 import { EdgeFinish } from './parts/EdgeFinish';
 import { FrontApron } from './parts/FrontApron';
-import { SceneCamera } from './parts/SceneCamera';
+import {
+  DEFAULT_CAMERA_POSITION,
+  SceneCamera,
+} from './parts/SceneCamera';
 import { SceneLighting } from './parts/SceneLighting';
 import { SideBacksplash } from './parts/SideBacksplash';
+import { SideSkirt } from './parts/SideSkirt';
 import { StoneTop } from './parts/StoneTop';
-import { WetArea } from './parts/WetArea';
+import { WetAreaRecess } from './parts/WetAreaRecess';
 import {
   buildCountertopModel,
   resolveEdgeFinishVisualType,
+  clamp,
   type CountertopModel,
 } from './utils/geometryUtils';
 import {
@@ -27,6 +32,10 @@ import {
 
 type PreviewErrorBoundaryProps = { children: ReactNode };
 type PreviewErrorBoundaryState = { hasError: boolean };
+
+type CountertopSceneProps = NormalizedThreeDPreviewProps & {
+  cameraResetKey?: string | number | null;
+};
 
 class PreviewErrorBoundary extends Component<
   PreviewErrorBoundaryProps,
@@ -141,7 +150,6 @@ function resolveCutoutDimensions(componentId?: string) {
 function CountertopScene({
   topComponentId,
   wetAreaComponentId,
-  cutoutComponentId,
   backsplashComponentId,
   frontApronComponentId,
   width,
@@ -152,17 +160,28 @@ function CountertopScene({
   backsplashEnabled = true,
   backsplashHeightCm = 8,
   leftBacksplashEnabled = false,
+  leftBacksplashHeightCm = 8,
   rightBacksplashEnabled = false,
+  rightBacksplashHeightCm = 8,
   frontApronEnabled = true,
   frontApronHeightCm = 12,
+  rearApronEnabled = false,
+  rearApronHeightCm = 10,
+  leftFrontApronEnabled = false,
+  leftFrontApronHeightCm = 10,
+  rightFrontApronEnabled = false,
+  rightFrontApronHeightCm = 10,
   edgeFinishType = 'rounded',
   wetAreaEnabled = true,
   wetAreaWidth,
   wetAreaDepth,
   wetAreaPosition,
-  cutoutEnabled,
-  cutoutPosition,
-}: NormalizedThreeDPreviewProps) {
+  sinkCutoutComponentId,
+  sinkCutoutPosition,
+  cooktopCutoutComponentId,
+  cooktopCutoutPosition,
+  cameraResetKey,
+}: CountertopSceneProps) {
   const visualEdgeFinish = resolveEdgeFinishVisualType(edgeFinishType);
   const hasExplicitNoFrontApron = frontApronComponentId === 'COMPONENT_030';
   const effectiveFrontApronEnabled = hasExplicitNoFrontApron
@@ -181,9 +200,6 @@ function CountertopScene({
   const wetAreaRegistryItem = wetAreaComponentId
     ? findThreeDComponent(wetAreaComponentId)
     : null;
-  const cutoutRegistryItem = cutoutComponentId
-    ? findThreeDComponent(cutoutComponentId)
-    : null;
   const backsplashRegistryItem = backsplashComponentId
     ? findThreeDComponent(backsplashComponentId)
     : null;
@@ -196,17 +212,13 @@ function CountertopScene({
     wetAreaRegistryItem?.category === 'wetArea'
       ? wetAreaRegistryItem.component
       : null;
-  const CutoutComponent =
-    cutoutRegistryItem?.category === 'cutout'
-      ? cutoutRegistryItem.component
+  const FrontApronComponent =
+    frontApronRegistryItem?.category === 'frontApron'
+      ? frontApronRegistryItem.component
       : null;
   const BacksplashComponent =
     backsplashRegistryItem?.category === 'backsplash'
       ? backsplashRegistryItem.component
-      : null;
-  const FrontApronComponent =
-    frontApronRegistryItem?.category === 'frontApron'
-      ? frontApronRegistryItem.component
       : null;
 
   const model = useMemo(
@@ -219,6 +231,12 @@ function CountertopScene({
         backsplashHeightCm,
         frontApronEnabled: effectiveFrontApronEnabled,
         frontApronHeightCm,
+        rearApronEnabled,
+        rearApronHeightCm,
+        leftFrontApronEnabled,
+        leftFrontApronHeightCm,
+        rightFrontApronEnabled,
+        rightFrontApronHeightCm,
         visualEdgeFinish: effectiveVisualEdgeFinish,
       }),
     [
@@ -227,25 +245,109 @@ function CountertopScene({
       depth,
       effectiveFrontApronEnabled,
       frontApronHeightCm,
+      rearApronEnabled,
+      rearApronHeightCm,
       thickness,
       effectiveVisualEdgeFinish,
       width,
+      leftFrontApronEnabled,
+      leftFrontApronHeightCm,
+      rightFrontApronEnabled,
+      rightFrontApronHeightCm,
     ],
   );
 
-  const groupY = model.t / 2 + model.skirtH + 0.018;
+  const activeSkirtHeight = Math.max(
+    effectiveFrontApronEnabled ? model.skirtH : 0,
+    rearApronEnabled ? model.rearSkirtH : 0,
+    leftFrontApronEnabled ? model.leftSkirtH : 0,
+    rightFrontApronEnabled ? model.rightSkirtH : 0,
+  );
+  const groupY = model.t / 2 + activeSkirtHeight + 0.018;
   const isLoadingResolvedTexture =
     Boolean(resolvedTextureUrl) && textureStatus === 'loading';
-  const cutoutDimensions =
-    cutoutEnabled && CutoutComponent
-      ? resolveCutoutDimensions(cutoutComponentId)
+  // Multi-cutout: coleta cuba + cooktop independentes
+  const resolvedCutouts: Array<{
+    width: number;
+    depth: number;
+    position: { x?: number; z?: number };
+  }> = [];
+  if (sinkCutoutComponentId) {
+    const dims = resolveCutoutDimensions(sinkCutoutComponentId);
+    if (dims) {
+      resolvedCutouts.push({
+        width: Math.min(dims.width, model.w * 0.72),
+        depth: Math.min(dims.depth, model.d * 0.74),
+        position: sinkCutoutPosition ?? { x: 0, z: 0 },
+      });
+    }
+  }
+  if (cooktopCutoutComponentId) {
+    const dims = resolveCutoutDimensions(cooktopCutoutComponentId);
+    if (dims) {
+      resolvedCutouts.push({
+        width: Math.min(dims.width, model.w * 0.72),
+        depth: Math.min(dims.depth, model.d * 0.74),
+        position: cooktopCutoutPosition ?? { x: 0, z: 0 },
+      });
+    }
+  }
+
+  // Wet area hole — adicionado ao Shape do StoneTop para abrir a chapa
+  const wetAreaCutout =
+    wetAreaEnabled && wetAreaWidth != null && wetAreaPosition != null
+      ? (() => {
+          const waDepth = wetAreaDepth ?? model.d;
+          const frontM = 0.04;
+          const backM = 0.02;
+          const safeD = Math.max(0.08, waDepth - frontM - backM);
+          return {
+            width: wetAreaWidth,
+            depth: safeD,
+            allowEdge: true,
+            position: {
+              x: wetAreaPosition.x ?? 0,
+              z: backM + safeD / 2 - waDepth / 2,
+            },
+          };
+        })()
       : null;
-  const cutoutWidth = cutoutDimensions
-    ? Math.min(cutoutDimensions.width, model.w * 0.72)
-    : undefined;
-  const cutoutDepth = cutoutDimensions
-    ? Math.min(cutoutDimensions.depth, model.d * 0.74)
-    : undefined;
+
+  const stoneTopCutouts = wetAreaCutout
+    ? [
+        wetAreaCutout,
+        ...resolvedCutouts.filter((c) => {
+          const wa = wetAreaCutout;
+          const cx = c.position.x ?? 0;
+          const halfW = c.width / 2;
+          const cz = c.position.z ?? 0;
+          const halfD = c.depth / 2;
+          const inside =
+            cx - halfW >= wa.position.x - wa.width / 2 &&
+            cx + halfW <= wa.position.x + wa.width / 2 &&
+            cz - halfD >= (wa.position.z as number) - wa.depth / 2 &&
+            cz + halfD <= (wa.position.z as number) + wa.depth / 2;
+          return !inside;
+        }),
+      ]
+    : resolvedCutouts;
+
+  // Cutouts 100% dentro da wet area → aplicados na plataforma com ExtrudeGeometry raso
+  const wetAreaInsideCutouts = wetAreaCutout
+    ? resolvedCutouts.filter((c) => {
+        const wa = wetAreaCutout;
+        const cx = c.position.x ?? 0;
+        const halfW = c.width / 2;
+        const cz = c.position.z ?? 0;
+        const halfD = c.depth / 2;
+        return (
+          cx - halfW >= wa.position.x - wa.width / 2 &&
+          cx + halfW <= wa.position.x + wa.width / 2 &&
+          cz - halfD >= (wa.position.z as number) - wa.depth / 2 &&
+          cz + halfD <= (wa.position.z as number) + wa.depth / 2
+        );
+      })
+    : [];
 
   return (
     <>
@@ -269,9 +371,7 @@ function CountertopScene({
             edgeRadius={model.edgeRadius}
             stoneName={stoneName}
             texture={texture}
-            cutoutWidth={cutoutWidth}
-            cutoutDepth={cutoutDepth}
-            cutoutPosition={cutoutPosition}
+            suppressStonePhotoSurface={wetAreaEnabled}
           />
         ) : (
           <StoneTop
@@ -281,9 +381,8 @@ function CountertopScene({
             edgeRadius={model.edgeRadius}
             stoneName={stoneName}
             texture={texture}
-            cutoutWidth={cutoutWidth}
-            cutoutDepth={cutoutDepth}
-            cutoutPosition={cutoutPosition}
+            cutouts={stoneTopCutouts.length > 0 ? stoneTopCutouts : undefined}
+            suppressStonePhotoSurface={wetAreaEnabled}
           />
         )}
 
@@ -299,29 +398,25 @@ function CountertopScene({
             wetAreaDepth={wetAreaDepth}
             wetAreaPosition={wetAreaPosition}
           />
-        ) : (
-          <WetArea
-            width={model.w}
-            depth={model.d}
-            thickness={model.t}
-            enabled={wetAreaEnabled}
-            wetAreaWidth={wetAreaWidth}
-            wetAreaDepth={wetAreaDepth}
-            wetAreaPosition={wetAreaPosition}
-          />
-        )}
+        ) : null}
 
-        {cutoutEnabled && CutoutComponent && (
-          <CutoutComponent
-            width={model.w}
-            depth={model.d}
-            thickness={model.t}
-            edgeRadius={model.edgeRadius}
+        {wetAreaEnabled && wetAreaWidth != null && wetAreaPosition != null && (
+          <WetAreaRecess
+            centerX={wetAreaPosition.x ?? 0}
+            width={wetAreaWidth}
+            depth={wetAreaDepth ?? model.d}
+            countertopThickness={model.t}
+            recessDepth={model.t}
+            frontMargin={0.04}
+            backMargin={0.02}
             stoneName={stoneName}
             texture={texture}
-            cutoutWidth={cutoutWidth}
-            cutoutDepth={cutoutDepth}
-            cutoutPosition={cutoutPosition}
+            cutoutHoles={wetAreaInsideCutouts.length > 0
+              ? wetAreaInsideCutouts.filter((c) => c.position.x != null).map((c) => ({
+                  width: c.width, depth: c.depth,
+                  position: { x: c.position.x!, z: c.position.z ?? 0 },
+                }))
+              : undefined}
           />
         )}
 
@@ -344,6 +439,7 @@ function CountertopScene({
             edgeRadius={model.edgeRadius}
             stoneName={stoneName}
             texture={texture}
+            suppressJoinShadow={wetAreaEnabled}
           />
         ) : (
           backsplashEnabled && (
@@ -356,17 +452,18 @@ function CountertopScene({
             edgeRadius={model.edgeRadius}
             stoneName={stoneName}
             texture={texture}
+            suppressJoinShadow={wetAreaEnabled}
           />
           )
         )}
 
-        {leftBacksplashEnabled && backsplashEnabled && (
+        {leftBacksplashEnabled && (
           <SideBacksplash
             side="left"
             width={model.w}
             depth={model.d}
             thickness={model.t}
-            backsplashHeight={model.backsplashH}
+            backsplashHeight={clamp(leftBacksplashHeightCm / 100, 0.04, 0.18)}
             backsplashThickness={model.backsplashT}
             edgeRadius={model.edgeRadius}
             stoneName={stoneName}
@@ -374,13 +471,13 @@ function CountertopScene({
           />
         )}
 
-        {rightBacksplashEnabled && backsplashEnabled && (
+        {rightBacksplashEnabled && (
           <SideBacksplash
             side="right"
             width={model.w}
             depth={model.d}
             thickness={model.t}
-            backsplashHeight={model.backsplashH}
+            backsplashHeight={clamp(rightBacksplashHeightCm / 100, 0.04, 0.18)}
             backsplashThickness={model.backsplashT}
             edgeRadius={model.edgeRadius}
             stoneName={stoneName}
@@ -416,11 +513,58 @@ function CountertopScene({
           )
         )}
 
+        {model.rearSkirtEnabled && model.rearSkirtH > 0 && (
+          <FrontApron
+            placement="back"
+            width={model.w}
+            depth={model.d}
+            thickness={model.t}
+            skirtHeight={model.rearSkirtH}
+            skirtThickness={model.rearSkirtT}
+            edgeRadius={model.edgeRadius}
+            stoneName={stoneName}
+            texture={texture}
+            visualEdgeFinish={effectiveVisualEdgeFinish}
+          />
+        )}
+
+        {model.leftSkirtEnabled && model.leftSkirtH > 0 && (
+          <SideSkirt
+            side="left"
+            width={model.w}
+            depth={model.d}
+            thickness={model.t}
+            skirtHeight={model.leftSkirtH}
+            skirtThickness={model.leftSkirtT}
+            frontApronThickness={model.skirtEnabled ? model.skirtT : 0}
+            rearApronThickness={backsplashEnabled ? model.backsplashT : model.rearSkirtEnabled ? model.rearSkirtT : 0}
+            edgeRadius={model.edgeRadius}
+            stoneName={stoneName}
+            texture={texture}
+          />
+        )}
+
+        {model.rightSkirtEnabled && model.rightSkirtH > 0 && (
+          <SideSkirt
+            side="right"
+            width={model.w}
+            depth={model.d}
+            thickness={model.t}
+            skirtHeight={model.rightSkirtH}
+            skirtThickness={model.rightSkirtT}
+            frontApronThickness={model.skirtEnabled ? model.skirtT : 0}
+            rearApronThickness={backsplashEnabled ? model.backsplashT : model.rearSkirtEnabled ? model.rearSkirtT : 0}
+            edgeRadius={model.edgeRadius}
+            stoneName={stoneName}
+            texture={texture}
+          />
+        )}
+
           </>
         )}
       </group>
 
-      <SceneCamera />
+      <SceneCamera resetKey={cameraResetKey} />
     </>
   );
 }
@@ -470,16 +614,20 @@ export function ThreeDPreview(props: ThreeDPreviewProps) {
         <PreviewErrorBoundary>
           <Suspense fallback={<PreviewFallback />}>
             <Canvas
-              camera={{ position: [2.45, 1.55, 2.15], fov: 31 }}
+              camera={{ position: DEFAULT_CAMERA_POSITION.toArray(), fov: 31 }}
               shadows={{ type: THREE.PCFSoftShadowMap }}
               dpr={[1, 2]}
               gl={{
                 antialias: true,
+                preserveDrawingBuffer: true,
                 toneMapping: THREE.ACESFilmicToneMapping,
                 toneMappingExposure: 1.05,
               }}
             >
-              <CountertopScene {...previewProps} />
+              <CountertopScene
+                {...previewProps}
+                cameraResetKey={props.cameraResetKey ?? 'default'}
+              />
             </Canvas>
           </Suspense>
         </PreviewErrorBoundary>

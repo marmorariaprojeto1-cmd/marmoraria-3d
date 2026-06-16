@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { resolveUserCompanyId } from '../../admin/company';
 import { useAuth } from '../../auth/useAuth';
 import { supabase } from '../../lib/supabase';
+import { generateQuotePDF } from '../../admin/generateQuotePDF';
 
 type QuoteStatus = 'submitted' | 'contacted' | 'negotiating' | 'won' | 'lost';
 
@@ -20,6 +21,65 @@ type Quote = {
 type RelatedName = {
   name: string;
 };
+
+type SnapshotComponent = {
+  enabled?: boolean;
+  height?: number | null;
+  width?: number | null;
+  centerX?: number | null;
+  type?: string | null;
+  frontMargin?: number | null;
+  backMargin?: number | null;
+};
+
+type ConfigurationSnapshot = {
+  version?: number;
+  source?: string;
+  customer?: {
+    name?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    city?: string | null;
+  };
+  countertop?: {
+    width?: number | null;
+    depth?: number | null;
+    thickness?: number | null;
+    stoneName?: string | null;
+    stoneId?: string | null;
+    totalPrice?: number | null;
+  };
+  components?: {
+    backsplashRear?: SnapshotComponent;
+    backsplashLeft?: SnapshotComponent;
+    backsplashRight?: SnapshotComponent;
+    skirtFront?: SnapshotComponent;
+    skirtRear?: SnapshotComponent;
+    skirtLeft?: SnapshotComponent;
+    skirtRight?: SnapshotComponent;
+    wetArea?: SnapshotComponent;
+    sink?: SnapshotComponent;
+    cooktop?: SnapshotComponent;
+  };
+  pricing?: {
+    total?: number | null;
+    baseStone?: number | null;
+    components?: Array<{
+      id?: string;
+      label?: string;
+      name?: string;
+      formula?: string;
+      areaM2?: number | null;
+      configuredPrice?: number | null;
+      price?: number;
+      source?: string;
+    }>;
+  };
+};
+
+type PricingComponentSnapshot = NonNullable<
+  NonNullable<ConfigurationSnapshot['pricing']>['components']
+>[number];
 
 type QuoteItem = {
   id: string;
@@ -49,6 +109,7 @@ type QuoteItem = {
   sink_unit_price_snapshot: number | null;
   finish_unit_price_snapshot: number | null;
   finish_pricing_type_snapshot: string | null;
+  configuration_snapshot: ConfigurationSnapshot | null;
   products: RelatedName | null;
   stones: RelatedName | null;
   sinks: RelatedName | null;
@@ -69,6 +130,14 @@ const statusLabels: Record<QuoteStatus, string> = {
   negotiating: 'Em negociação',
   won: 'Fechado',
   lost: 'Perdido',
+};
+
+const statusStyles: Record<QuoteStatus, string> = {
+  submitted: 'border-green-200 bg-green-50 text-green-700',
+  contacted: 'border-blue-200 bg-blue-50 text-blue-700',
+  negotiating: 'border-amber-200 bg-amber-50 text-amber-700',
+  won: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  lost: 'border-red-200 bg-red-50 text-red-700',
 };
 
 function formatCurrency(value: number) {
@@ -104,11 +173,89 @@ function formatPricingType(value: string | null) {
   return labels[value] ?? value;
 }
 
+function formatOptionalNumber(value: number | null | undefined, suffix: string) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? `${value.toFixed(2)}${suffix}`
+    : 'Não registrado';
+}
+
+function formatMeasure(value: number | null | undefined, suffix: string) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? `${value.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}${suffix}`
+    : 'Não registrado';
+}
+
+function formatThickness(value: number | null | undefined) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? `${value.toLocaleString('pt-BR', {
+      maximumFractionDigits: 2,
+    })}cm`
+    : 'Não registrado';
+}
+
+function formatSnapshotComponent(label: string, component: SnapshotComponent | undefined) {
+  if (!component?.enabled) {
+    return `${label}: não`;
+  }
+
+  const details: string[] = [];
+
+  if (typeof component.height === 'number') {
+    details.push(`${component.height}cm`);
+  }
+
+  if (component.type) {
+    details.push(component.type);
+  }
+
+  if (typeof component.width === 'number') {
+    details.push(`largura ${component.width.toFixed(2)}m`);
+  }
+
+  if (typeof component.centerX === 'number') {
+    details.push(`centro ${component.centerX.toFixed(2)}m`);
+  }
+
+  return details.length > 0 ? `${label}: ${details.join(' · ')}` : `${label}: sim`;
+}
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('pt-BR', {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(new Date(value));
+}
+
+function formatWhatsAppPhone(value: string) {
+  const digits = value.replace(/\D/g, '');
+  return digits.startsWith('55') ? digits : `55${digits}`;
+}
+
+function buildWhatsAppUrl(quote: Quote, snapshot: ConfigurationSnapshot | null) {
+  const countertop = snapshot?.countertop ?? {};
+  const pricing = snapshot?.pricing ?? {};
+  const stoneName = countertop.stoneName ?? 'Não informada';
+  const width = typeof countertop.width === 'number' ? countertop.width.toFixed(2) : 'Não informado';
+  const depth = typeof countertop.depth === 'number' ? countertop.depth.toFixed(2) : 'Não informada';
+  const total = pricing.total ?? countertop.totalPrice ?? quote.total_price;
+  const message = [
+    `Olá, ${quote.customer_name}! Tudo bem?`,
+    '',
+    'Segue seu orçamento da Marmoraria 3D:',
+    '',
+    `Pedra: ${stoneName}`,
+    `Medidas: ${width}m x ${depth}m`,
+    `Valor total: ${formatCurrency(total)}`,
+    '',
+    'O orçamento em PDF já está disponível para envio.',
+    '',
+    'Qualquer dúvida, fico à disposição.',
+  ].join('\n');
+
+  return `https://wa.me/${formatWhatsAppPhone(quote.customer_phone)}?text=${encodeURIComponent(message)}`;
 }
 
 export function OrdersPage() {
@@ -126,6 +273,10 @@ export function OrdersPage() {
   const selectedQuote = useMemo(
     () => quotes.find((quote) => quote.id === selectedQuoteId) ?? null,
     [quotes, selectedQuoteId],
+  );
+  const project3DItem = useMemo(
+    () => quoteItems.find((item) => item.configuration_snapshot) ?? null,
+    [quoteItems],
   );
 
   const loadQuotes = useCallback(async (nextCompanyId: string) => {
@@ -157,41 +308,7 @@ export function OrdersPage() {
       try {
         const { data, error } = await supabase
           .from('quote_items')
-          .select(
-            [
-              'id',
-              'quote_id',
-              'product_id',
-              'stone_id',
-              'sink_id',
-              'finish_id',
-              'width',
-              'depth',
-              'thickness',
-              'quantity',
-              'unit_price',
-              'total_price',
-              'calculated_area',
-              'stone_price_snapshot',
-              'sink_price_snapshot',
-              'finish_price_snapshot',
-              'thickness_multiplier',
-              'subtotal_snapshot',
-              'total_snapshot',
-              'product_name_snapshot',
-              'stone_name_snapshot',
-              'sink_name_snapshot',
-              'finish_name_snapshot',
-              'stone_price_per_m2_snapshot',
-              'sink_unit_price_snapshot',
-              'finish_unit_price_snapshot',
-              'finish_pricing_type_snapshot',
-              'products(name)',
-              'stones(name)',
-              'sinks(name)',
-              'finishes(name)',
-            ].join(', '),
-          )
+          .select('*, products(name), stones(name), sinks(name), finishes(name)')
           .eq('company_id', nextCompanyId)
           .eq('quote_id', quoteId)
           .order('created_at', { ascending: true });
@@ -258,7 +375,13 @@ export function OrdersPage() {
   async function openDetails(quote: Quote) {
     setSelectedQuoteId(quote.id);
     setSuccessMessage('');
+    setQuoteItems([]);
     await loadQuoteItems(quote.id, quote.company_id);
+    window.setTimeout(() => {
+      document
+        .getElementById('order-details-panel')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
   }
 
   async function updateQuoteStatus(quote: Quote, nextStatus: QuoteStatus) {
@@ -295,13 +418,13 @@ export function OrdersPage() {
   }
 
   return (
-    <section className="page-shell">
-      <div>
-        <p className="page-kicker">Pedidos</p>
-        <h1 className="page-title">
+    <section className="admin-page">
+      <div className="admin-page-header">
+        <p className="admin-page-kicker">Pedidos</p>
+        <h1 className="admin-page-title">
           Pedidos recebidos
         </h1>
-        <p className="page-description">
+        <p className="admin-page-description">
           Acompanhe os orçamentos enviados pelos clientes e atualize o status
           comercial sem sair do painel da marmoraria.
         </p>
@@ -328,11 +451,11 @@ export function OrdersPage() {
       )}
 
       <div className="surface-card overflow-hidden">
-        <div className="border-b border-stoneLine p-5">
-          <h2 className="text-lg font-semibold text-graphite">
+        <div className="admin-card-header">
+          <h2 className="admin-card-title">
             Lista de pedidos
           </h2>
-          <p className="mt-1 text-sm text-stone-600">
+          <p className="admin-card-description">
             Exibindo apenas pedidos da empresa vinculada ao usuário logado.
           </p>
         </div>
@@ -345,33 +468,46 @@ export function OrdersPage() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-stoneLine text-sm">
-              <thead className="table-head">
+            <table className="admin-table min-w-[860px]">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3">Cliente</th>
-                  <th className="px-4 py-3">Telefone</th>
-                  <th className="px-4 py-3">Cidade</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Valor total</th>
-                  <th className="px-4 py-3">Data</th>
-                  <th className="px-4 py-3">Detalhes</th>
+                  <th className="w-[118px]">Ações</th>
+                  <th>Cliente</th>
+                  <th className="w-[126px]">Telefone</th>
+                  <th className="w-[126px]">Cidade</th>
+                  <th className="w-[136px]">Status</th>
+                  <th className="w-[130px] text-right">Valor total</th>
+                  <th className="w-[136px]">Data</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stoneLine">
+              <tbody>
                 {quotes.map((quote) => (
-                  <tr key={quote.id} className="align-top">
-                    <td className="table-cell font-medium text-graphite">
+                  <tr key={quote.id} className="align-middle">
+                    <td>
+                      <button
+                        className="admin-action-button"
+                        type="button"
+                        onClick={() => void openDetails(quote)}
+                        aria-label={`Ver detalhes do pedido de ${quote.customer_name}`}
+                      >
+                        Ver detalhes
+                      </button>
+                    </td>
+                    <td className="font-medium text-graphite">
                       {quote.customer_name}
                     </td>
-                    <td className="table-cell text-stone-700">
+                    <td className="whitespace-nowrap text-stone-700">
                       {quote.customer_phone}
                     </td>
-                    <td className="table-cell text-stone-700">
+                    <td className="text-stone-700">
                       {quote.city || 'Não informada'}
                     </td>
-                    <td className="table-cell">
+                    <td>
                       <select
-                        className="rounded-md border border-stoneLine bg-white px-3 py-2 text-sm text-graphite outline-none transition focus:border-moss focus:ring-2 focus:ring-moss/20 disabled:cursor-not-allowed disabled:text-stone-400"
+                        className={[
+                          'w-full rounded-md border px-3 py-2 text-sm font-semibold outline-none transition focus:ring-2 focus:ring-moss/20 disabled:cursor-not-allowed disabled:opacity-60',
+                          statusStyles[quote.status],
+                        ].join(' ')}
                         value={quote.status}
                         onChange={(event) =>
                           void updateQuoteStatus(
@@ -388,20 +524,11 @@ export function OrdersPage() {
                         ))}
                       </select>
                     </td>
-                    <td className="table-cell font-semibold text-graphite">
+                    <td className="whitespace-nowrap text-right font-semibold text-graphite">
                       {formatCurrency(quote.total_price)}
                     </td>
-                    <td className="table-cell text-stone-700">
+                    <td className="whitespace-nowrap text-stone-700">
                       {formatDate(quote.created_at)}
-                    </td>
-                    <td className="table-cell">
-                      <button
-                        className="secondary-button px-3 py-2"
-                        type="button"
-                        onClick={() => void openDetails(quote)}
-                      >
-                        Ver detalhes
-                      </button>
                     </td>
                   </tr>
                 ))}
@@ -412,30 +539,66 @@ export function OrdersPage() {
       </div>
 
       {selectedQuote && (
-        <div className="surface-card p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div
+          className="surface-card scroll-mt-24 p-5"
+          id="order-details-panel"
+        >
+          <div className="border-b border-stoneLine pb-3">
             <div>
               <p className="text-sm font-semibold uppercase text-moss">
-                Detalhe do pedido
+                Dados do pedido
               </p>
-              <h2 className="mt-1 text-2xl font-bold text-graphite">
+              <h2 className="mt-1 text-xl font-bold text-graphite">
                 {selectedQuote.customer_name}
               </h2>
-              <p className="mt-2 text-sm text-stone-600">
+              <p className="mt-1 text-sm text-stone-600">
                 {selectedQuote.customer_phone} ·{' '}
                 {selectedQuote.city || 'Cidade não informada'}
               </p>
             </div>
-            <button
-              className="secondary-button px-3 py-2"
-              type="button"
-              onClick={() => {
-                setSelectedQuoteId(null);
-                setQuoteItems([]);
-              }}
-            >
-              Fechar detalhes
-            </button>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() =>
+                  generateQuotePDF(
+                    {
+                      id: selectedQuote.id,
+                      customerName: selectedQuote.customer_name,
+                      customerPhone: selectedQuote.customer_phone,
+                      city: selectedQuote.city,
+                      totalPrice: selectedQuote.total_price,
+                      createdAt: selectedQuote.created_at,
+                    },
+                    project3DItem?.configuration_snapshot ?? null,
+                  )
+                }
+              >
+                Gerar PDF
+              </button>
+              <a
+                className="secondary-button"
+                href={buildWhatsAppUrl(
+                  selectedQuote,
+                  project3DItem?.configuration_snapshot ?? null,
+                )}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Enviar WhatsApp
+              </a>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => {
+                  setSelectedQuoteId(null);
+                  setQuoteItems([]);
+                }}
+              >
+                Fechar detalhes
+              </button>
+            </div>
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -450,10 +613,22 @@ export function OrdersPage() {
             <SummaryBox label="Data" value={formatDate(selectedQuote.created_at)} />
           </div>
 
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold text-graphite">
-              Itens do orçamento
-            </h3>
+          <div className="mt-4">
+            {!loadingDetails && project3DItem?.configuration_snapshot && (
+              <Project3DSummary
+                item={project3DItem}
+                snapshot={project3DItem.configuration_snapshot}
+              />
+            )}
+
+            <div className="border-t border-stoneLine pt-4">
+              <h3 className="text-base font-semibold text-graphite">
+                Itens técnicos e legado
+              </h3>
+              <p className="mt-1 text-sm text-stone-600">
+                Dados salvos para compatibilidade com pedidos e snapshots anteriores.
+              </p>
+            </div>
 
             {loadingDetails ? (
               <p className="mt-3 text-stone-700">Carregando itens...</p>
@@ -518,7 +693,7 @@ export function OrdersPage() {
                       />
                     </div>
 
-                    <div className="mt-5 border-t border-stoneLine pt-4">
+                    <div className="mt-4 border-t border-stoneLine pt-3">
                       <h4 className="text-sm font-semibold uppercase text-stone-500">
                         Snapshot comercial do pedido
                       </h4>
@@ -582,7 +757,7 @@ export function OrdersPage() {
                       </div>
                     </div>
 
-                    <div className="mt-5 border-t border-stoneLine pt-4">
+                    <div className="mt-4 border-t border-stoneLine pt-3">
                       <h4 className="text-sm font-semibold uppercase text-stone-500">
                         Breakdown salvo
                       </h4>
@@ -640,11 +815,249 @@ export function OrdersPage() {
   );
 }
 
+function Project3DSummary({
+  item,
+  snapshot,
+}: {
+  item: QuoteItem;
+  snapshot: ConfigurationSnapshot;
+}) {
+  const countertop = snapshot.countertop ?? {};
+  const components = snapshot.components ?? {};
+  const pricing = snapshot.pricing ?? {};
+  const projectTotal = pricing.total ?? countertop.totalPrice ?? item.total_price;
+
+  return (
+    <div className="mb-4 rounded-md border border-moss/30 bg-moss/5 p-3.5">
+      <h3 className="text-base font-semibold text-graphite">
+        Projeto 3D
+      </h3>
+      <p className="mt-0.5 text-xs text-stone-600">
+        Snapshot estrutural salvo pelo configurador 3D no momento do envio.
+      </p>
+
+      <div className="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+        <SummaryBox
+          label="Medidas 3D"
+          value={`${formatOptionalNumber(countertop.width, 'm')} x ${formatOptionalNumber(
+            countertop.depth,
+            'm',
+          )} · esp. ${formatOptionalNumber(countertop.thickness, 'cm')}`}
+        />
+        <SummaryBox
+          label="Pedra 3D"
+          value={countertop.stoneName ?? 'Não registrada'}
+        />
+        <SummaryBox
+          label="Preço 3D"
+          value={formatCurrency(projectTotal)}
+        />
+        <SummaryBox
+          label="Origem"
+          value={snapshot.source ?? 'Configurador 3D'}
+        />
+        <SummaryBox
+          label="Frontões"
+          value={[
+            formatSnapshotComponent('Traseiro', components.backsplashRear),
+            formatSnapshotComponent('Esquerdo', components.backsplashLeft),
+            formatSnapshotComponent('Direito', components.backsplashRight),
+          ].join(' | ')}
+        />
+        <SummaryBox
+          label="Saias"
+          value={[
+            formatSnapshotComponent('Frontal', components.skirtFront),
+            formatSnapshotComponent('Traseira', components.skirtRear),
+            formatSnapshotComponent('Esquerda', components.skirtLeft),
+            formatSnapshotComponent('Direita', components.skirtRight),
+          ].join(' | ')}
+        />
+        <SummaryBox
+          label="Área molhada"
+          value={formatSnapshotComponent('Área molhada', components.wetArea)}
+        />
+        <SummaryBox
+          label="Cuba"
+          value={formatSnapshotComponent('Cuba', components.sink)}
+        />
+        <SummaryBox
+          label="Cooktop"
+          value={formatSnapshotComponent('Cooktop', components.cooktop)}
+        />
+      </div>
+
+      <FinancialBreakdown
+        item={item}
+        snapshot={snapshot}
+      />
+    </div>
+  );
+}
+
+function FinancialBreakdown({
+  item,
+  snapshot,
+}: {
+  item: QuoteItem;
+  snapshot: ConfigurationSnapshot;
+}) {
+  const countertop = snapshot.countertop ?? {};
+  const pricing = snapshot.pricing ?? {};
+  const componentItems = pricing.components ?? [];
+  const stoneName = countertop.stoneName ?? 'Pedra não registrada';
+  const baseStone = pricing.baseStone ?? null;
+  const total = pricing.total ?? countertop.totalPrice ?? item.total_price;
+  const stoneLine = `${stoneName} — ${formatMeasure(countertop.width, 'm')} x ${formatMeasure(
+    countertop.depth,
+    'm',
+  )} x ${formatThickness(countertop.thickness)}`;
+
+  const stoneComponents = componentItems.filter((component) =>
+    component.source === 'stone_area' ||
+    component.areaM2 !== null && component.areaM2 !== undefined,
+  );
+  const serviceComponents = componentItems.filter((component) =>
+    !stoneComponents.includes(component),
+  );
+
+  return (
+    <div className="mt-4 border-t border-moss/20 pt-4">
+      <h4 className="text-base font-semibold text-graphite">
+        Resumo financeiro
+      </h4>
+      <p className="mt-0.5 text-xs text-stone-600">
+        Valores exibidos a partir do snapshot salvo no pedido.
+      </p>
+
+      <div className="mt-3 overflow-hidden rounded-md border border-stoneLine bg-white">
+        <FinancialSection title="Pedra">
+          <FinancialLine
+            label={stoneLine}
+            description="Valor base salvo no snapshot"
+            value={baseStone === null ? null : baseStone}
+          />
+        </FinancialSection>
+
+        {componentItems.length === 0 ? (
+          <FinancialSection title="Componentes">
+            <FinancialLine
+              label="Breakdown de componentes não registrado"
+              description="Pedido antigo ou snapshot sem pricing.components"
+              value={null}
+            />
+          </FinancialSection>
+        ) : (
+          <>
+            {stoneComponents.length > 0 && (
+              <FinancialSection title="Frontões e saias">
+                {stoneComponents.map((component, index) => (
+                  <FinancialComponentLine
+                    component={component}
+                    key={component.id ?? `${component.label ?? component.name}-${index}`}
+                  />
+                ))}
+              </FinancialSection>
+            )}
+
+            {serviceComponents.length > 0 && (
+              <FinancialSection title="Serviços">
+                {serviceComponents.map((component, index) => (
+                  <FinancialComponentLine
+                    component={component}
+                    key={component.id ?? `${component.label ?? component.name}-${index}`}
+                  />
+                ))}
+              </FinancialSection>
+            )}
+          </>
+        )}
+
+        <div className="flex items-center justify-between gap-4 border-t border-stoneLine bg-stone-50 px-3 py-3">
+          <p className="text-xs font-bold uppercase tracking-wide text-graphite">
+            Total
+          </p>
+          <p className="text-lg font-bold text-graphite">
+            {formatCurrency(total)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FinancialSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="border-t border-stoneLine first:border-t-0">
+      <div className="bg-stone-50 px-3 py-1.5">
+        <p className="text-[11px] font-semibold uppercase text-stone-500">{title}</p>
+      </div>
+      <div className="divide-y divide-stoneLine">{children}</div>
+    </div>
+  );
+}
+
+function FinancialComponentLine({
+  component,
+}: {
+  component: PricingComponentSnapshot;
+}) {
+  const label = component.label ?? component.name ?? 'Componente sem nome';
+  const details = [
+    component.formula,
+    typeof component.areaM2 === 'number'
+      ? `Área ${component.areaM2.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 4,
+      })} m²`
+      : null,
+    typeof component.configuredPrice === 'number'
+      ? `Preço configurado ${formatCurrency(component.configuredPrice)}`
+      : null,
+  ].filter((detail): detail is string => Boolean(detail));
+
+  return (
+    <FinancialLine
+      label={label}
+      description={details.join(' · ') || 'Detalhes não registrados'}
+      value={typeof component.price === 'number' ? component.price : null}
+    />
+  );
+}
+
+function FinancialLine({
+  label,
+  description,
+  value,
+}: {
+  label: string;
+  description: string;
+  value: number | null;
+}) {
+  return (
+    <div className="grid gap-2 px-3 py-2.5 sm:grid-cols-[1fr_auto] sm:items-start">
+      <div>
+        <p className="text-sm font-medium text-graphite">{label}</p>
+        <p className="mt-0.5 text-xs text-stone-500">{description}</p>
+      </div>
+      <p className="text-sm font-semibold text-graphite">
+        {value === null ? 'Não registrado' : formatCurrency(value)}
+      </p>
+    </div>
+  );
+}
+
 function SummaryBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-stoneLine bg-white p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase text-stone-500">{label}</p>
-      <p className="mt-1 font-medium text-graphite">{value}</p>
+    <div className="rounded-md border border-stoneLine bg-white p-3 shadow-sm">
+      <p className="text-[11px] font-semibold uppercase text-stone-500">{label}</p>
+      <p className="mt-1 text-sm font-medium text-graphite">{value}</p>
     </div>
   );
 }

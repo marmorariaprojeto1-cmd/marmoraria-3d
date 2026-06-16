@@ -4,15 +4,20 @@ import { ProtectedAdminPage } from './pages/AdminPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { CommercialProductsPage } from './pages/admin/CommercialProductsPage';
 import { CompanySettingsPage } from './pages/admin/CompanySettingsPage';
+import { CutoutsPage } from './pages/admin/CutoutsPage';
+import { DrillingsPage } from './pages/admin/DrillingsPage';
 import { FinishesPage } from './pages/admin/FinishesPage';
 import { OrdersPage } from './pages/admin/OrdersPage';
 import { ProductsPage } from './pages/admin/ProductsPage';
 import { SinksPage } from './pages/admin/SinksPage';
 import { StonesPage } from './pages/admin/StonesPage';
+import { CountertopConfiguratorPage } from './pages/CountertopConfiguratorPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { Preview3DPage } from './pages/Preview3DPage';
-import { SimulatorPage } from './pages/SimulatorPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { StoneCatalogPage } from './pages/StoneCatalogPage';
+import { ProtectedSuperAdminPage } from './pages/SuperAdminPage';
 
 export const router = createBrowserRouter([
   {
@@ -25,7 +30,15 @@ export const router = createBrowserRouter([
       },
       {
         path: 'simulador',
-        element: <SimulatorPage />,
+        element: <CountertopConfiguratorPage />,
+      },
+      {
+        path: 'configurador-tampo',
+        element: <CountertopConfiguratorPage />,
+      },
+      {
+        path: 'catalogo-pedras',
+        element: <StoneCatalogPage />,
       },
       {
         path: 'preview-3d',
@@ -34,6 +47,10 @@ export const router = createBrowserRouter([
       {
         path: 'login',
         element: <LoginPage />,
+      },
+      {
+        path: 'redefinir-senha',
+        element: <ResetPasswordPage />,
       },
       {
         path: 'admin',
@@ -56,6 +73,14 @@ export const router = createBrowserRouter([
             element: <SinksPage />,
           },
           {
+            path: 'recortes',
+            element: <CutoutsPage />,
+          },
+          {
+            path: 'furacoes',
+            element: <DrillingsPage />,
+          },
+          {
             path: 'acabamentos',
             element: <FinishesPage />,
           },
@@ -72,6 +97,10 @@ export const router = createBrowserRouter([
             element: <CompanySettingsPage />,
           },
         ],
+      },
+      {
+        path: 'superadmin',
+        element: <ProtectedSuperAdminPage />,
       },
     ],
   },

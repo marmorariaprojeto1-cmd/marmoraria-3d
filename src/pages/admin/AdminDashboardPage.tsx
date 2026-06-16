@@ -161,13 +161,13 @@ export function AdminDashboardPage() {
   const latestQuotes = quotes.slice(0, 5);
 
   return (
-    <section className="page-shell">
-      <div>
-        <p className="page-kicker">Dashboard</p>
-        <h1 className="page-title">
+    <section className="admin-page">
+      <div className="admin-page-header">
+        <p className="admin-page-kicker">Dashboard</p>
+        <h1 className="admin-page-title">
           Visão geral da marmoraria
         </h1>
-        <p className="page-description">
+        <p className="admin-page-description">
           Indicadores reais de pedidos e oportunidades da empresa vinculada ao
           usuário autenticado.
         </p>
@@ -202,7 +202,7 @@ export function AdminDashboardPage() {
                 <p className="text-sm font-medium text-stone-600">
                   {card.label}
                 </p>
-                <p className="mt-3 text-3xl font-bold text-graphite">
+                <p className="mt-2 text-3xl font-bold text-graphite">
                   {card.value}
                 </p>
               </div>
@@ -210,11 +210,11 @@ export function AdminDashboardPage() {
           </div>
 
           <div className="surface-card overflow-hidden">
-            <div className="border-b border-stoneLine p-5">
-              <h2 className="text-lg font-semibold text-graphite">
+            <div className="admin-card-header">
+              <h2 className="admin-card-title">
                 Últimos pedidos
               </h2>
-              <p className="mt-1 text-sm text-stone-600">
+              <p className="admin-card-description">
                 Lista simples dos pedidos mais recentes da empresa.
               </p>
             </div>
@@ -225,36 +225,36 @@ export function AdminDashboardPage() {
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-stoneLine text-sm">
-                  <thead className="table-head">
+                <table className="admin-table min-w-[780px]">
+                  <thead>
                     <tr>
-                      <th className="px-4 py-3">Cliente</th>
-                      <th className="px-4 py-3">Telefone</th>
-                      <th className="px-4 py-3">Cidade</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Valor</th>
-                      <th className="px-4 py-3">Data</th>
+                      <th>Cliente</th>
+                      <th>Telefone</th>
+                      <th>Cidade</th>
+                      <th>Status</th>
+                      <th className="text-right">Valor</th>
+                      <th>Data</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-stoneLine">
+                  <tbody>
                     {latestQuotes.map((quote) => (
                       <tr key={quote.id}>
-                        <td className="table-cell font-medium text-graphite">
+                        <td className="font-medium text-graphite">
                           {quote.customer_name}
                         </td>
-                        <td className="table-cell text-stone-700">
+                        <td className="text-stone-700">
                           {quote.customer_phone}
                         </td>
-                        <td className="table-cell text-stone-700">
+                        <td className="text-stone-700">
                           {quote.city || 'Não informada'}
                         </td>
-                        <td className="table-cell text-stone-700">
+                        <td className="text-stone-700">
                           {statusLabels[quote.status]}
                         </td>
-                        <td className="table-cell font-semibold text-graphite">
+                        <td className="text-right font-semibold text-graphite">
                           {formatCurrency(quote.total_price)}
                         </td>
-                        <td className="table-cell text-stone-700">
+                        <td className="text-stone-700">
                           {formatDate(quote.created_at)}
                         </td>
                       </tr>

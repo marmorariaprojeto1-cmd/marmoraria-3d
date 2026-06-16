@@ -1,3 +1,19 @@
+/**
+ * @deprecated Use `catalog/pricing/calculateQuoteEstimate` instead.
+ *
+ * Este arquivo foi substituído pelo QuoteEngine unificado em
+ * `src/catalog/pricing/calculateQuoteEstimate.ts` como parte da
+ * unificação dos motores de orçamento do Marmoraria3D.
+ *
+ * Para o simulador: importe `calculateQuoteEstimate` e `roundMoney` de
+ * `../catalog/pricing`.
+ *
+ * Para preview comercial: use `calculateCommercialEstimate` e
+ * `buildEstimateBreakdown` (também disponíveis em `../catalog/pricing`).
+ *
+ * Este arquivo é mantido apenas como referência e não deve ser usado
+ * em novos códigos. Será removido em versão futura.
+ */
 import type {
   FinishQuoteInput,
   QuoteCalculationInput,

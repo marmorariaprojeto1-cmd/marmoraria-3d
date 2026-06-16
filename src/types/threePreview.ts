@@ -97,17 +97,35 @@ export type LegacyThreeDPreviewProps = {
   stoneName: string;
   stoneImageUrl?: string | null;
   sinkEnabled?: boolean;
+  cutoutEnabled?: boolean;
+  cutoutComponentId?: string;
+  cutoutPosition?: ThreeDCutoutPosition;
+  /** Cuba como cutout independente */
+  sinkCutoutComponentId?: string;
+  sinkCutoutPosition?: ThreeDCutoutPosition;
+  /** Cooktop como cutout independente */
+  cooktopCutoutComponentId?: string;
+  cooktopCutoutPosition?: ThreeDCutoutPosition;
   backsplashEnabled?: boolean;
   backsplashHeightCm?: number;
   leftBacksplashEnabled?: boolean;
+  leftBacksplashHeightCm?: number;
   rightBacksplashEnabled?: boolean;
+  rightBacksplashHeightCm?: number;
   frontApronEnabled?: boolean;
   frontApronHeightCm?: number;
+  rearApronEnabled?: boolean;
+  rearApronHeightCm?: number;
+  leftFrontApronEnabled?: boolean;
+  leftFrontApronHeightCm?: number;
+  rightFrontApronEnabled?: boolean;
+  rightFrontApronHeightCm?: number;
   edgeFinishType?: ThreeDEdgeFinishType;
   wetAreaEnabled?: boolean;
   wetAreaWidth?: number;
   wetAreaDepth?: number;
   wetAreaPosition?: ThreeDWetAreaPosition;
+  cameraResetKey?: string | number | null;
 };
 
 export type ThreeDPreviewProps =

@@ -231,11 +231,11 @@ export function SinksPage() {
   }
 
   return (
-    <section className="space-y-6">
-      <div>
-        <p className="text-sm font-semibold uppercase text-moss">Catálogo</p>
-        <h1 className="mt-2 text-3xl font-bold text-graphite">Cubas</h1>
-        <p className="mt-3 max-w-3xl text-stone-700">
+    <section className="admin-page">
+      <div className="admin-page-header">
+        <p className="admin-page-kicker">Catálogo</p>
+        <h1 className="admin-page-title">Cubas</h1>
+        <p className="admin-page-description">
           Cadastre e mantenha as cubas disponíveis para a marmoraria. Esta etapa
           não implementa upload, orçamento, simulador ou outros módulos.
         </p>
@@ -261,79 +261,70 @@ export function SinksPage() {
         </div>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
+      <div className="space-y-6">
         <form
-          className="space-y-4 rounded-lg border border-stoneLine bg-white p-5 shadow-sm"
+          className="surface-card p-5"
           onSubmit={handleSubmit}
         >
-          <div>
-            <h2 className="text-lg font-semibold text-graphite">
-              {editingSink ? 'Editar cuba' : 'Cadastrar cuba'}
-            </h2>
-            <p className="mt-1 text-sm text-stone-600">
-              Use categorias simples nesta etapa inicial.
-            </p>
-          </div>
+          <div className="grid gap-4 xl:grid-cols-[minmax(180px,1.4fr)_minmax(160px,1fr)_minmax(130px,0.8fr)_auto_auto] xl:items-end">
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-stone-700">Nome</span>
+              <input
+                className="field-input"
+                type="text"
+                value={form.name}
+                onChange={(event) => updateForm('name', event.target.value)}
+                required
+                disabled={!companyId || saving}
+              />
+            </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-stone-700">Nome</span>
-            <input
-              className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
-              type="text"
-              value={form.name}
-              onChange={(event) => updateForm('name', event.target.value)}
-              required
-              disabled={!companyId || saving}
-            />
-          </label>
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-stone-700">
+                Categoria
+              </span>
+              <select
+                className="field-input"
+                value={form.category}
+                onChange={(event) => updateForm('category', event.target.value)}
+                disabled={!companyId || saving}
+              >
+                <option value="">Sem categoria</option>
+                {sinkCategories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-stone-700">
-              Categoria
-            </span>
-            <select
-              className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
-              value={form.category}
-              onChange={(event) => updateForm('category', event.target.value)}
-              disabled={!companyId || saving}
-            >
-              <option value="">Sem categoria</option>
-              {sinkCategories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </label>
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-stone-700">Preço</span>
+              <input
+                className="field-input"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.price}
+                onChange={(event) => updateForm('price', event.target.value)}
+                required
+                disabled={!companyId || saving}
+              />
+            </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-stone-700">Preço</span>
-            <input
-              className="w-full rounded-md border border-stoneLine px-3 py-3 text-graphite outline-none transition focus:border-moss"
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.price}
-              onChange={(event) => updateForm('price', event.target.value)}
-              required
-              disabled={!companyId || saving}
-            />
-          </label>
+            <label className="flex min-h-[48px] items-center gap-3 whitespace-nowrap text-sm font-medium text-stone-700">
+              <input
+                className="h-4 w-4 accent-moss"
+                type="checkbox"
+                checked={form.active}
+                onChange={(event) => updateForm('active', event.target.checked)}
+                disabled={!companyId || saving}
+              />
+              Ativa
+            </label>
 
-          <label className="flex items-center gap-3 text-sm font-medium text-stone-700">
-            <input
-              className="h-4 w-4 accent-moss"
-              type="checkbox"
-              checked={form.active}
-              onChange={(event) => updateForm('active', event.target.checked)}
-              disabled={!companyId || saving}
-            />
-            Cuba ativa
-          </label>
-
-          <div className="flex flex-wrap gap-3">
             <button
-              className="rounded-md bg-graphite px-4 py-3 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-400"
+              className="primary-button whitespace-nowrap px-4 py-2.5"
               type="submit"
               disabled={!companyId || saving}
             >
@@ -341,11 +332,11 @@ export function SinksPage() {
                 ? 'Salvando...'
                 : editingSink
                   ? 'Salvar edição'
-                  : 'Cadastrar'}
+                  : 'Cadastrar cuba'}
             </button>
             {editingSink && (
               <button
-                className="rounded-md border border-stoneLine px-4 py-3 text-sm font-semibold text-graphite transition hover:bg-stone-100"
+                className="secondary-button whitespace-nowrap px-4 py-2.5"
                 type="button"
                 onClick={resetForm}
                 disabled={saving}
@@ -356,12 +347,12 @@ export function SinksPage() {
           </div>
         </form>
 
-        <div className="rounded-lg border border-stoneLine bg-white shadow-sm">
-          <div className="border-b border-stoneLine p-5">
-            <h2 className="text-lg font-semibold text-graphite">
+        <div className="surface-card overflow-hidden">
+          <div className="admin-card-header">
+            <h2 className="admin-card-title">
               Cubas cadastradas
             </h2>
-            <p className="mt-1 text-sm text-stone-600">
+            <p className="admin-card-description">
               Listagem vinculada à empresa do usuário autenticado.
             </p>
           </div>
@@ -374,32 +365,32 @@ export function SinksPage() {
             </p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-left text-sm">
-                <thead className="bg-stone-100 text-stone-700">
+              <table className="admin-table min-w-[640px]">
+                <thead>
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Nome</th>
-                    <th className="px-4 py-3 font-semibold">Categoria</th>
-                    <th className="px-4 py-3 font-semibold">Preço</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold">Ações</th>
+                    <th>Nome</th>
+                    <th>Categoria</th>
+                    <th className="text-right">Preço</th>
+                    <th>Status</th>
+                    <th>Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-stoneLine">
+                <tbody>
                   {sinks.map((sink) => (
                     <tr key={sink.id}>
-                      <td className="px-4 py-4 font-medium text-graphite">
+                      <td className="font-medium text-graphite">
                         {sink.name}
                       </td>
-                      <td className="px-4 py-4 text-stone-700">
+                      <td className="text-stone-700">
                         {sink.category || 'Sem categoria'}
                       </td>
-                      <td className="px-4 py-4 text-stone-700">
+                      <td className="text-right font-semibold text-graphite">
                         {formatCurrency(sink.price)}
                       </td>
-                      <td className="px-4 py-4">
+                      <td>
                         <span
                           className={[
-                            'rounded-full px-2 py-1 text-xs font-semibold',
+                            'admin-status-badge',
                             sink.active
                               ? 'bg-green-50 text-green-700'
                               : 'bg-stone-100 text-stone-600',
@@ -408,17 +399,17 @@ export function SinksPage() {
                           {sink.active ? 'Ativa' : 'Inativa'}
                         </span>
                       </td>
-                      <td className="px-4 py-4">
+                      <td>
                         <div className="flex flex-wrap gap-2">
                           <button
-                            className="rounded-md border border-stoneLine px-3 py-2 font-medium text-graphite transition hover:bg-stone-100"
+                            className="admin-action-button"
                             type="button"
                             onClick={() => startEditing(sink)}
                           >
                             Editar
                           </button>
                           <button
-                            className="rounded-md border border-stoneLine px-3 py-2 font-medium text-graphite transition hover:bg-stone-100"
+                            className="admin-action-button"
                             type="button"
                             onClick={() => void toggleSinkActive(sink)}
                           >

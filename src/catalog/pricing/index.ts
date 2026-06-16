@@ -12,6 +12,7 @@ export {
   calculateCommercialEstimate,
   calculateCommercialEstimateFromConfiguration,
 } from './calculateCommercialEstimate';
+export { calculateQuoteEstimate } from './calculateQuoteEstimate';
 export {
   buildEstimateBreakdown,
   formatEstimateBreakdown,
@@ -20,6 +21,12 @@ export {
   formatCompositionComponents,
   getComponentDisplayName,
 } from './compositionDisplay';
+export {
+  ensureNonNegativeNumber,
+  resolveQuantity,
+  resolveThicknessMultiplier,
+  roundMoney,
+} from './moneyUtils';
 export type {
   BasePriceResult,
   CalculateBasePriceInput,
@@ -27,10 +34,13 @@ export type {
   CalculateCommercialEstimateInput,
   CommercialEstimate,
   ComponentAddonItem,
+  ComponentAddonCategory,
   ComponentAddonPrice,
   ComponentAddonsResult,
   ComponentPricingType,
   EstimateBreakdown,
   EstimateBreakdownItem,
+  QuoteEngineInput,
+  QuoteEngineResult,
   StoneBasePrice,
 } from './types';

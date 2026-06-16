@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
+import { DEBUG_VISUAL, debugMaterial, DEBUG_COLORS } from '../debugVisual';
 import {
   resolveStoneProfile,
   StoneMaterial,
@@ -19,6 +20,14 @@ type StoneTopProps = {
   cutoutWidth?: number;
   cutoutDepth?: number;
   cutoutPosition?: ThreeDCutoutPosition;
+  /** Múltiplos cutouts (Cuba + Cooktop simultâneos). Se informado, ignora cutoutWidth/Depth/Position. */
+  cutouts?: Array<{
+    width: number;
+    depth: number;
+    position: ThreeDCutoutPosition;
+    allowEdge?: boolean;
+  }>;
+  suppressStonePhotoSurface?: boolean;
 };
 
 type StoneVeinsProps = {
@@ -184,8 +193,7 @@ function StoneTopWithCutout({
   cutoutWidth,
   cutoutDepth,
   cutoutPosition,
-}: Required<Pick<StoneTopProps, 'cutoutWidth' | 'cutoutDepth'>> &
-  Omit<StoneTopProps, 'cutoutWidth' | 'cutoutDepth'>) {
+}: StoneTopProps) {
   const geometry = useMemo(
     () =>
       createStoneTopCutoutGeometry({
@@ -193,8 +201,8 @@ function StoneTopWithCutout({
         depth,
         thickness,
         edgeRadius,
-        cutoutWidth,
-        cutoutDepth,
+        cutoutWidth: cutoutWidth!,
+        cutoutDepth: cutoutDepth!,
         cutoutPosition,
       }),
     [cutoutDepth, cutoutPosition, cutoutWidth, depth, edgeRadius, thickness, width],
@@ -226,6 +234,104 @@ function StoneTopWithCutout({
   );
 }
 
+function createMultiCutoutGeometry({
+  width,
+  depth,
+  thickness,
+  edgeRadius,
+  cutouts,
+}: {
+  width: number;
+  depth: number;
+  thickness: number;
+  edgeRadius: number;
+  cutouts: Array<{ width: number; depth: number; position: ThreeDCutoutPosition; allowEdge?: boolean }>;
+}) {
+  const margin = Math.max(edgeRadius * 2.2, 0.045);
+  const bevelSize = Math.min(0.002, edgeRadius * 0.35, thickness * 0.06);
+  const uvScale = 0.72;
+  const uvGenerator = {
+    generateTopUV(_geometry: THREE.BufferGeometry, vertices: number[], indexA: number, indexB: number, indexC: number) {
+      const ax = vertices[indexA * 3]; const ay = vertices[indexA * 3 + 1];
+      const bx = vertices[indexB * 3]; const by = vertices[indexB * 3 + 1];
+      const cx = vertices[indexC * 3]; const cy = vertices[indexC * 3 + 1];
+      return [new THREE.Vector2((ax / width + 0.5) * uvScale, (ay / depth + 0.5) * uvScale), new THREE.Vector2((bx / width + 0.5) * uvScale, (by / depth + 0.5) * uvScale), new THREE.Vector2((cx / width + 0.5) * uvScale, (cy / depth + 0.5) * uvScale)];
+    },
+    generateSideWallUV(_geometry: THREE.BufferGeometry, vertices: number[], indexA: number, indexB: number, indexC: number, indexD: number) {
+      const ax = vertices[indexA * 3]; const ay = vertices[indexA * 3 + 1];
+      const bx = vertices[indexB * 3]; const by = vertices[indexB * 3 + 1];
+      const cx = vertices[indexC * 3]; const cz = vertices[indexC * 3 + 2];
+      const dx = vertices[indexD * 3]; const dz = vertices[indexD * 3 + 2];
+      const wallLength = Math.hypot(bx - ax, by - ay);
+      return [new THREE.Vector2(0, 0), new THREE.Vector2(wallLength * 1.5, 0), new THREE.Vector2(wallLength * 1.5 + Math.abs(cx - dx) * 0.12, Math.abs(cz) / thickness), new THREE.Vector2(0, Math.abs(dz) / thickness)];
+    },
+  };
+
+  const shape = new THREE.Shape();
+  shape.moveTo(-width / 2, -depth / 2);
+  shape.lineTo(width / 2, -depth / 2);
+  shape.lineTo(width / 2, depth / 2);
+  shape.lineTo(-width / 2, depth / 2);
+  shape.lineTo(-width / 2, -depth / 2);
+
+  for (const cutout of cutouts) {
+    const cutoutMargin = cutout.allowEdge ? 0.0005 : margin;
+    const safeW = Math.min(cutout.width, Math.max(0.08, width - cutoutMargin * 2));
+    const safeD = Math.min(cutout.depth, Math.max(0.08, depth - cutoutMargin * 2));
+    const maxX = Math.max(0, width / 2 - safeW / 2 - cutoutMargin);
+    const maxZ = Math.max(0, depth / 2 - safeD / 2 - cutoutMargin);
+    const cx = THREE.MathUtils.clamp(cutout.position.x ?? 0, -maxX, maxX);
+    const cz = THREE.MathUtils.clamp(cutout.position.z ?? 0, -maxZ, maxZ);
+
+    const hole = new THREE.Path();
+    const holeCenterY = -cz;
+    hole.moveTo(cx - safeW / 2, holeCenterY - safeD / 2);
+    hole.lineTo(cx - safeW / 2, holeCenterY + safeD / 2);
+    hole.lineTo(cx + safeW / 2, holeCenterY + safeD / 2);
+    hole.lineTo(cx + safeW / 2, holeCenterY - safeD / 2);
+    hole.lineTo(cx - safeW / 2, holeCenterY - safeD / 2);
+    shape.holes.push(hole);
+  }
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: thickness,
+    bevelEnabled: true,
+    bevelSize,
+    bevelThickness: bevelSize * 0.5,
+    bevelSegments: 2,
+    curveSegments: 1,
+    UVGenerator: uvGenerator,
+  });
+  geometry.rotateX(-Math.PI / 2);
+  geometry.translate(0, -thickness / 2, 0);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function StoneTopMultiCutout({
+  width, depth, thickness, edgeRadius, stoneName, texture, cutouts,
+}: StoneTopProps & { cutouts: NonNullable<StoneTopProps['cutouts']> }) {
+  const geometry = useMemo(
+    () => createMultiCutoutGeometry({ width, depth, thickness, edgeRadius, cutouts }),
+    [cutouts, depth, edgeRadius, thickness, width],
+  );
+  useEffect(() => () => geometry.dispose(), [geometry]);
+
+  return (
+    <>
+      <mesh castShadow receiveShadow>
+        <primitive object={geometry} attach="geometry" />
+        {DEBUG_VISUAL ? (
+          <primitive object={debugMaterial(DEBUG_COLORS.stoneTop)} attach="material" />
+        ) : (
+          <StonePhysicalMaterial stoneName={stoneName} texture={texture} colorOffset={-0.045} roughnessOffset={0.06} />
+        )}
+      </mesh>
+      {!texture && <StoneVeins width={width} depth={depth} thickness={thickness} stoneName={stoneName} />}
+    </>
+  );
+}
+
 export function StoneTop({
   width,
   depth,
@@ -236,7 +342,18 @@ export function StoneTop({
   cutoutWidth,
   cutoutDepth,
   cutoutPosition,
+  cutouts,
+  suppressStonePhotoSurface = false,
 }: StoneTopProps) {
+  if (cutouts && cutouts.length > 0) {
+    return (
+      <StoneTopMultiCutout
+        width={width} depth={depth} thickness={thickness}
+        edgeRadius={edgeRadius} stoneName={stoneName} texture={texture}
+        cutouts={cutouts}
+      />
+    );
+  }
   if (cutoutWidth && cutoutDepth) {
     return (
       <StoneTopWithCutout
@@ -256,20 +373,26 @@ export function StoneTop({
   return (
     <>
       <mesh castShadow receiveShadow>
-        <RoundedBox args={[width, thickness, depth]} radius={edgeRadius} smoothness={8}>
-          <StoneMaterial stoneName={stoneName} texture={texture} />
+        <RoundedBox args={[width, thickness, depth]} radius={edgeRadius} smoothness={12}>
+          {DEBUG_VISUAL ? (
+            <primitive object={debugMaterial(DEBUG_COLORS.stoneTop)} attach="material" />
+          ) : (
+            <StoneMaterial stoneName={stoneName} texture={texture} />
+          )}
         </RoundedBox>
       </mesh>
 
-      <StonePhotoSurface
-        texture={texture}
-        width={width}
-        height={depth}
-        repeatX={Math.max(1.4, width * 1.1)}
-        repeatY={Math.max(0.9, depth * 1.25)}
-        position={[0, thickness / 2 + 0.005, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      />
+      {!suppressStonePhotoSurface && (
+        <StonePhotoSurface
+          texture={texture}
+          width={width}
+          height={depth}
+          repeatX={Math.max(1.4, width * 1.1)}
+          repeatY={Math.max(0.9, depth * 1.25)}
+          position={[0, thickness / 2 + 0.005, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        />
+      )}
 
       {!texture && (
         <StoneVeins

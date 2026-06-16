@@ -13,6 +13,7 @@ type BacksplashProps = {
   edgeRadius: number;
   stoneName: string;
   texture: THREE.Texture | null;
+  suppressJoinShadow?: boolean;
 };
 
 export function Backsplash({
@@ -24,6 +25,7 @@ export function Backsplash({
   edgeRadius,
   stoneName,
   texture,
+  suppressJoinShadow = false,
 }: BacksplashProps) {
   const backsplashCenterZ = insetCenterFromBack(depth, backsplashThickness);
   const backsplashInnerFaceZ = -depth / 2 + backsplashThickness;
@@ -40,9 +42,9 @@ export function Backsplash({
         ]}
       >
         <RoundedBox
-          args={[width * 0.982, backsplashHeight, backsplashThickness]}
+          args={[width, backsplashHeight, backsplashThickness]}
           radius={Math.min(0.012, edgeRadius * 0.65)}
-          smoothness={6}
+          smoothness={8}
         >
           <StoneMaterial
             stoneName={stoneName}
@@ -55,7 +57,7 @@ export function Backsplash({
 
       <StonePhotoSurface
         texture={texture}
-        width={width * 0.995}
+        width={width}
         height={backsplashHeight * 0.98}
         repeatX={Math.max(1.4, width)}
         repeatY={Math.max(0.35, backsplashHeight * 1.8)}
@@ -66,14 +68,16 @@ export function Backsplash({
         ]}
       />
 
-      <JoinShadow
-        width={width * 0.9}
-        position={[
-          0,
-          thickness / 2 + 0.004,
-          backsplashInnerFaceZ + 0.001,
-        ]}
-      />
+      {!suppressJoinShadow && (
+        <JoinShadow
+          width={width}
+          position={[
+            0,
+            thickness / 2 + 0.004,
+            backsplashInnerFaceZ + 0.001,
+          ]}
+        />
+      )}
     </>
   );
 }

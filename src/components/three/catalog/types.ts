@@ -29,6 +29,8 @@ export type ThreeDRegisteredComponentProps = {
   wetAreaWidth?: number;
   wetAreaDepth?: number;
   wetAreaPosition?: ThreeDPreviewProps['wetAreaPosition'];
+  suppressStonePhotoSurface?: boolean;
+  suppressJoinShadow?: boolean;
   cutoutWidth?: number;
   cutoutDepth?: number;
   cutoutPosition?: ThreeDCutoutPosition;

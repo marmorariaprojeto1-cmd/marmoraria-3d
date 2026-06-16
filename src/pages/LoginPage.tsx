@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
-import { hasSupabaseConfig } from '../lib/supabase';
+import { hasSupabaseConfig, supabase } from '../lib/supabase';
 
 type LocationState = {
   from?: {
@@ -10,19 +10,32 @@ type LocationState = {
 };
 
 export function LoginPage() {
-  const { signIn, user, loading } = useAuth();
+  const { signIn, signOut, user, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+  const [showResetForm, setShowResetForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [resetSubmitting, setResetSubmitting] = useState(false);
 
   const state = location.state as LocationState | null;
-  const redirectTo = state?.from?.pathname || '/admin';
+  const redirectTo = state?.from?.pathname;
 
-  if (!loading && user) {
-    return <Navigate to={redirectTo} replace />;
+  async function resolvePostLoginPath() {
+    if (redirectTo) {
+      return redirectTo;
+    }
+
+    const { data, error } = await supabase.rpc('current_user_is_superadmin');
+
+    if (error) {
+      return '/admin';
+    }
+
+    return data === true ? '/superadmin' : '/admin';
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -32,11 +45,81 @@ export function LoginPage() {
 
     try {
       await signIn(email, password);
-      navigate(redirectTo, { replace: true });
+      const destination = await resolvePostLoginPath();
+      navigate(destination, { replace: true });
     } catch {
       setErrorMessage('Não foi possível entrar. Verifique e-mail e senha.');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleAuthenticatedSignOut() {
+    await signOut();
+    navigate('/login', { replace: true });
+  }
+
+  async function handleGoToPanel() {
+    const destination = await resolvePostLoginPath();
+    navigate(destination, { replace: true });
+  }
+
+  if (!loading && user) {
+    return (
+      <section className="mx-auto max-w-xl">
+        <div className="surface-card space-y-5 p-6">
+          <div>
+            <p className="page-kicker">Login</p>
+            <h1 className="text-3xl font-bold text-graphite">
+              Você já está logado
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-stone-600">
+              Entre no painel vinculado ao seu usuário ou saia para trocar de
+              conta.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              className="primary-button flex-1"
+              type="button"
+              onClick={handleGoToPanel}
+            >
+              Ir para o painel
+            </button>
+            <button
+              className="secondary-button flex-1"
+              type="button"
+              onClick={handleAuthenticatedSignOut}
+            >
+              Sair
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  async function handlePasswordReset() {
+    setErrorMessage('');
+    setResetMessage('');
+    setResetSubmitting(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/redefinir-senha`,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setResetMessage(
+        'Enviamos um link de redefinição para o e-mail informado.',
+      );
+    } catch {
+      setErrorMessage('Não foi possível enviar o e-mail de redefinição.');
+    } finally {
+      setResetSubmitting(false);
     }
   }
 
@@ -69,10 +152,7 @@ export function LoginPage() {
         </div>
       )}
 
-      <form
-        className="surface-card space-y-5 p-6"
-        onSubmit={handleSubmit}
-      >
+      <form className="surface-card space-y-5 p-6" onSubmit={handleSubmit}>
         <div>
           <h2 className="text-xl font-bold text-graphite">Entrar no painel</h2>
           <p className="mt-1 text-sm text-stone-600">
@@ -117,6 +197,43 @@ export function LoginPage() {
         >
           {submitting ? 'Entrando...' : 'Entrar'}
         </button>
+
+        <button
+          className="w-full text-center text-sm font-semibold text-moss underline-offset-4 hover:underline"
+          type="button"
+          onClick={() => {
+            setShowResetForm((current) => !current);
+            setErrorMessage('');
+            setResetMessage('');
+          }}
+        >
+          Esqueci minha senha
+        </button>
+
+        {showResetForm && (
+          <div className="rounded-lg border border-stoneLine bg-stone-50 p-4">
+            <p className="text-sm font-semibold text-graphite">
+              Recuperação de senha
+            </p>
+            <p className="mt-1 text-sm text-stone-600">
+              Informe o e-mail acima e enviaremos um link para redefinir a
+              senha.
+            </p>
+            <button
+              className="secondary-button mt-4 w-full"
+              type="button"
+              disabled={resetSubmitting || !email}
+              onClick={handlePasswordReset}
+            >
+              {resetSubmitting ? 'Enviando...' : 'Enviar link de redefinição'}
+            </button>
+            {resetMessage && (
+              <p className="mt-3 rounded-lg border border-green-200 bg-green-50 p-3 text-sm font-semibold text-green-800">
+                {resetMessage}
+              </p>
+            )}
+          </div>
+        )}
       </form>
     </section>
   );

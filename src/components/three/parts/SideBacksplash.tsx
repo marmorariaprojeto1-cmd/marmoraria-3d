@@ -46,7 +46,7 @@ export function SideBacksplash({
       <RoundedBox
         args={[backsplashThickness, backsplashHeight, depth - backsplashThickness]}
         radius={Math.min(0.012, edgeRadius * 0.6)}
-        smoothness={6}
+        smoothness={8}
       >
         <StoneMaterial
           stoneName={stoneName}

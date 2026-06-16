@@ -63,6 +63,45 @@ body {
     @apply w-full rounded-md border border-stoneLine bg-white px-3 py-3 text-graphite outline-none transition focus:border-moss focus:ring-2 focus:ring-moss/20;
   }
 
+  .component-height-slider {
+    height: 10px;
+    cursor: pointer;
+    appearance: none;
+    background: transparent;
+  }
+
+  .component-height-slider::-webkit-slider-runnable-track {
+    height: 3px;
+    border-radius: 999px;
+    background: rgba(79, 111, 82, 0.22);
+  }
+
+  .component-height-slider::-webkit-slider-thumb {
+    width: 10px;
+    height: 10px;
+    margin-top: -3.5px;
+    appearance: none;
+    border-radius: 999px;
+    border: 1px solid rgba(79, 111, 82, 0.38);
+    background: #4f6f52;
+    box-shadow: 0 2px 6px rgba(31, 41, 51, 0.16);
+  }
+
+  .component-height-slider::-moz-range-track {
+    height: 3px;
+    border-radius: 999px;
+    background: rgba(79, 111, 82, 0.22);
+  }
+
+  .component-height-slider::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(79, 111, 82, 0.38);
+    background: #4f6f52;
+    box-shadow: 0 2px 6px rgba(31, 41, 51, 0.16);
+  }
+
   .message-warning {
     @apply rounded-md border border-copper/30 bg-orange-50 p-4 text-sm text-stone-800;
   }
@@ -81,5 +120,81 @@ body {
 
   .table-cell {
     @apply px-4 py-3;
+  }
+
+  .admin-page {
+    @apply space-y-7;
+  }
+
+  .admin-page-header {
+    @apply flex flex-col;
+  }
+
+  .admin-page-kicker {
+    @apply text-sm font-semibold uppercase text-moss;
+  }
+
+  .admin-page-title {
+    @apply mt-2 text-3xl font-bold text-graphite sm:text-4xl;
+  }
+
+  .admin-page-description {
+    @apply mt-3 max-w-3xl text-stone-700;
+  }
+
+  .admin-card-header {
+    @apply border-b border-stoneLine bg-white p-5;
+  }
+
+  .admin-card-title {
+    @apply text-lg font-semibold text-graphite;
+  }
+
+  .admin-card-description {
+    @apply mt-1 text-sm text-stone-600;
+  }
+
+  .admin-crud-grid {
+    @apply grid gap-6 xl:grid-cols-[360px_1fr];
+  }
+
+  .admin-form-card {
+    @apply surface-card space-y-4 p-5;
+  }
+
+  .admin-table {
+    @apply w-full text-left text-sm;
+  }
+
+  .admin-table thead {
+    @apply bg-stone-50 text-xs font-semibold uppercase text-stone-600;
+  }
+
+  .admin-table th {
+    @apply px-4 py-3;
+  }
+
+  .admin-table td {
+    @apply px-4 py-3;
+  }
+
+  .admin-table tbody {
+    @apply divide-y divide-stoneLine;
+  }
+
+  .admin-table tbody tr:nth-child(even) {
+    @apply bg-stone-50/45;
+  }
+
+  .admin-table tbody tr {
+    @apply transition hover:bg-stone-100/60;
+  }
+
+  .admin-action-button {
+    @apply whitespace-nowrap rounded-md border border-stoneLine bg-white px-3 py-2 text-sm font-semibold text-graphite transition hover:bg-stone-50;
+  }
+
+  .admin-status-badge {
+    @apply inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold;
   }
 }

@@ -15,6 +15,7 @@ export function Component002Top30mm({
   cutoutWidth,
   cutoutDepth,
   cutoutPosition,
+  suppressStonePhotoSurface,
 }: ThreeDRegisteredComponentProps) {
   return (
     <StoneTop
@@ -27,6 +28,7 @@ export function Component002Top30mm({
       cutoutWidth={cutoutWidth}
       cutoutDepth={cutoutDepth}
       cutoutPosition={cutoutPosition}
+      suppressStonePhotoSurface={suppressStonePhotoSurface}
     />
   );
 }

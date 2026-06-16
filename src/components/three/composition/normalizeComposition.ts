@@ -44,9 +44,17 @@ export type NormalizedThreeDPreviewProps = {
   backsplashEnabled: boolean;
   backsplashHeightCm: number;
   leftBacksplashEnabled: boolean;
+  leftBacksplashHeightCm: number;
   rightBacksplashEnabled: boolean;
+  rightBacksplashHeightCm: number;
   frontApronEnabled: boolean;
   frontApronHeightCm: number;
+  rearApronEnabled: boolean;
+  rearApronHeightCm: number;
+  leftFrontApronEnabled: boolean;
+  leftFrontApronHeightCm: number;
+  rightFrontApronEnabled: boolean;
+  rightFrontApronHeightCm: number;
   edgeFinishType: NonNullable<ThreeDPreviewProps['edgeFinishType']>;
   wetAreaEnabled: boolean;
   wetAreaWidth?: number;
@@ -54,6 +62,10 @@ export type NormalizedThreeDPreviewProps = {
   wetAreaPosition?: ThreeDPreviewProps['wetAreaPosition'];
   cutoutEnabled: boolean;
   cutoutPosition?: ThreeDCutoutPosition;
+  sinkCutoutComponentId?: string;
+  sinkCutoutPosition?: ThreeDCutoutPosition;
+  cooktopCutoutComponentId?: string;
+  cooktopCutoutPosition?: ThreeDCutoutPosition;
 };
 
 export function normalizeComposition(
@@ -92,7 +104,9 @@ export function normalizeComposition(
           composition.backsplash?.heightMm,
         ) / 10,
       leftBacksplashEnabled: composition.backsplash?.leftEnabled ?? false,
+      leftBacksplashHeightCm: (composition.backsplash?.heightMm ?? 80) / 10,
       rightBacksplashEnabled: composition.backsplash?.rightEnabled ?? false,
+      rightBacksplashHeightCm: (composition.backsplash?.heightMm ?? 80) / 10,
       frontApronEnabled:
         frontApronComponentId === 'COMPONENT_030'
           ? false
@@ -102,6 +116,12 @@ export function normalizeComposition(
           frontApronComponentId,
           composition.frontApron?.heightMm,
         ) / 10,
+      rearApronEnabled: false,
+      rearApronHeightCm: 10,
+      leftFrontApronEnabled: false,
+      leftFrontApronHeightCm: 10,
+      rightFrontApronEnabled: false,
+      rightFrontApronHeightCm: 10,
       edgeFinishType: composition.edgeFinish?.type ?? 'straight',
       wetAreaEnabled: composition.wetArea?.enabled ?? false,
       wetAreaWidth: composition.wetArea?.width,
@@ -122,14 +142,28 @@ export function normalizeComposition(
     backsplashEnabled: props.backsplashEnabled ?? true,
     backsplashHeightCm: props.backsplashHeightCm ?? 8,
     leftBacksplashEnabled: props.leftBacksplashEnabled ?? false,
+    leftBacksplashHeightCm: props.leftBacksplashHeightCm ?? props.backsplashHeightCm ?? 8,
     rightBacksplashEnabled: props.rightBacksplashEnabled ?? false,
+    rightBacksplashHeightCm: props.rightBacksplashHeightCm ?? props.backsplashHeightCm ?? 8,
     frontApronEnabled: props.frontApronEnabled ?? true,
     frontApronHeightCm: props.frontApronHeightCm ?? 12,
+    rearApronEnabled: props.rearApronEnabled ?? false,
+    rearApronHeightCm: props.rearApronHeightCm ?? 10,
+    leftFrontApronEnabled: props.leftFrontApronEnabled ?? false,
+    leftFrontApronHeightCm: props.leftFrontApronHeightCm ?? 10,
+    rightFrontApronEnabled: props.rightFrontApronEnabled ?? false,
+    rightFrontApronHeightCm: props.rightFrontApronHeightCm ?? 10,
     edgeFinishType: props.edgeFinishType ?? 'rounded',
     wetAreaEnabled: props.wetAreaEnabled ?? true,
     wetAreaWidth: props.wetAreaWidth,
     wetAreaDepth: props.wetAreaDepth,
     wetAreaPosition: props.wetAreaPosition,
-    cutoutEnabled: false,
+    cutoutEnabled: props.cutoutEnabled ?? false,
+    cutoutComponentId: props.cutoutComponentId,
+    cutoutPosition: props.cutoutPosition,
+    sinkCutoutComponentId: props.sinkCutoutComponentId,
+    sinkCutoutPosition: props.sinkCutoutPosition,
+    cooktopCutoutComponentId: props.cooktopCutoutComponentId,
+    cooktopCutoutPosition: props.cooktopCutoutPosition,
   };
 }

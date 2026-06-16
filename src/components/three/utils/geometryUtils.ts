@@ -23,6 +23,15 @@ export type CountertopModel = {
   skirtEnabled: boolean;
   skirtH: number;
   skirtT: number;
+  rearSkirtEnabled: boolean;
+  rearSkirtH: number;
+  rearSkirtT: number;
+  leftSkirtEnabled: boolean;
+  leftSkirtH: number;
+  leftSkirtT: number;
+  rightSkirtEnabled: boolean;
+  rightSkirtH: number;
+  rightSkirtT: number;
 };
 
 export const edgeFinishConfigs: Record<EdgeFinishVisualType, EdgeFinishConfig> = {
@@ -107,6 +116,12 @@ export function buildCountertopModel({
   backsplashHeightCm,
   frontApronEnabled,
   frontApronHeightCm,
+  rearApronEnabled,
+  rearApronHeightCm,
+  leftFrontApronEnabled,
+  leftFrontApronHeightCm,
+  rightFrontApronEnabled,
+  rightFrontApronHeightCm,
   visualEdgeFinish,
 }: {
   width: number;
@@ -116,6 +131,12 @@ export function buildCountertopModel({
   backsplashHeightCm: number;
   frontApronEnabled: boolean;
   frontApronHeightCm: number;
+  rearApronEnabled: boolean;
+  rearApronHeightCm: number;
+  leftFrontApronEnabled: boolean;
+  leftFrontApronHeightCm: number;
+  rightFrontApronEnabled: boolean;
+  rightFrontApronHeightCm: number;
   visualEdgeFinish: EdgeFinishVisualType;
 }): CountertopModel {
   const w = Math.min(3.6, Math.max(0.8, width || 0.8));
@@ -123,7 +144,7 @@ export function buildCountertopModel({
   const t = Math.min(0.08, Math.max(0.015, thickness || 0.03));
   const edgeRadius =
     visualEdgeFinish === 'straight'
-      ? 0.006
+      ? 0.007
       : visualEdgeFinish === 'miter45'
         ? 0.014
         : visualEdgeFinish === 'halfBullnose'
@@ -134,7 +155,7 @@ export function buildCountertopModel({
   const backsplashH = backsplashEnabled
     ? clamp(backsplashHeightCm / 100, 0.04, 0.18)
     : 0;
-  const backsplashT = Math.min(0.065, Math.max(0.04, t * 0.36));
+  const backsplashT = t;
   const skirtEnabled = frontApronEnabled || visualEdgeFinish === 'doubleApron';
   const skirtH = skirtEnabled
     ? clamp(
@@ -142,10 +163,25 @@ export function buildCountertopModel({
           ? Math.max(frontApronHeightCm / 100, 0.16)
           : frontApronHeightCm / 100,
         0.04,
-        0.26,
+        1.26,
       )
     : 0;
-  const skirtT = Math.min(0.065, Math.max(0.04, t * 0.36));
+  const skirtT = t;
+  const rearSkirtEnabled = rearApronEnabled;
+  const rearSkirtH = rearSkirtEnabled
+    ? clamp(rearApronHeightCm / 100, 0.04, 1.26)
+    : 0;
+  const rearSkirtT = t;
+  const leftSkirtEnabled = leftFrontApronEnabled;
+  const leftSkirtH = leftSkirtEnabled
+    ? clamp(leftFrontApronHeightCm / 100, 0.04, 1.26)
+    : 0;
+  const leftSkirtT = t;
+  const rightSkirtEnabled = rightFrontApronEnabled;
+  const rightSkirtH = rightSkirtEnabled
+    ? clamp(rightFrontApronHeightCm / 100, 0.04, 1.26)
+    : 0;
+  const rightSkirtT = t;
 
   return {
     w,
@@ -157,5 +193,14 @@ export function buildCountertopModel({
     skirtEnabled,
     skirtH,
     skirtT,
+    rearSkirtEnabled,
+    rearSkirtH,
+    rearSkirtT,
+    leftSkirtEnabled,
+    leftSkirtH,
+    leftSkirtT,
+    rightSkirtEnabled,
+    rightSkirtH,
+    rightSkirtT,
   };
 }

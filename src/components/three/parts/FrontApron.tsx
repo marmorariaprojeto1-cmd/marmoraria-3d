@@ -10,6 +10,7 @@ import {
 import type { EdgeFinishVisualType } from '../utils/geometryUtils';
 
 type FrontApronProps = {
+  placement?: 'front' | 'back';
   width: number;
   depth: number;
   thickness: number;
@@ -22,6 +23,7 @@ type FrontApronProps = {
 };
 
 export function FrontApron({
+  placement = 'front',
   width,
   depth,
   thickness,
@@ -32,14 +34,22 @@ export function FrontApron({
   texture,
   visualEdgeFinish,
 }: FrontApronProps) {
-  const frontFaceZ = depth / 2;
-  const skirtCenterZ = insetCenterFromFront(depth, skirtThickness);
-  const detailCenterZ = insetCenterFromFront(depth, 0.006);
+  const isFront = placement === 'front';
+  const apronFaceZ = isFront ? depth / 2 : -depth / 2;
+  const skirtCenterZ = isFront
+    ? insetCenterFromFront(depth, skirtThickness)
+    : -insetCenterFromFront(depth, skirtThickness);
+  const detailCenterZ = isFront
+    ? insetCenterFromFront(depth, 0.006)
+    : -insetCenterFromFront(depth, 0.006);
   const doubleApronDetailDepth = skirtThickness * 0.72;
   const doubleApronDetailCenterZ = insetCenterFromFront(
     depth,
     doubleApronDetailDepth,
   );
+  const resolvedDoubleApronDetailCenterZ = isFront
+    ? doubleApronDetailCenterZ
+    : -doubleApronDetailCenterZ;
 
   return (
     <>
@@ -53,9 +63,9 @@ export function FrontApron({
         ]}
       >
         <RoundedBox
-          args={[width * 0.988, skirtHeight, skirtThickness]}
+          args={[width, skirtHeight, skirtThickness]}
           radius={Math.min(0.014, edgeRadius * 0.72)}
-          smoothness={6}
+          smoothness={8}
         >
           <StoneMaterial
             stoneName={stoneName}
@@ -72,7 +82,7 @@ export function FrontApron({
         height={skirtHeight * 0.98}
         repeatX={Math.max(1.4, width)}
         repeatY={Math.max(0.4, skirtHeight * 1.8)}
-        position={[0, -thickness / 2 - skirtHeight / 2 + 0.006, frontFaceZ]}
+        position={[0, -thickness / 2 - skirtHeight / 2 + 0.006, apronFaceZ]}
       />
 
       <JoinShadow
@@ -88,7 +98,7 @@ export function FrontApron({
             position={[
               0,
               -thickness / 2 - skirtHeight * 0.5 + 0.006,
-              doubleApronDetailCenterZ,
+              resolvedDoubleApronDetailCenterZ,
             ]}
           >
             <boxGeometry args={[width * 0.972, 0.010, doubleApronDetailDepth]} />

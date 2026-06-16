@@ -14,6 +14,7 @@ export function Component021Backsplash50mm({
   edgeRadius,
   stoneName,
   texture,
+  suppressJoinShadow,
 }: ThreeDRegisteredComponentProps) {
   return (
     <Backsplash
@@ -25,6 +26,7 @@ export function Component021Backsplash50mm({
       edgeRadius={edgeRadius}
       stoneName={stoneName}
       texture={texture}
+      suppressJoinShadow={suppressJoinShadow}
     />
   );
 }
